@@ -1,0 +1,22 @@
+DIO6 - RED LED
+DIO7 - GREEN LED
+DIO13 - LEFT/BTN1 
+DIO14 - RIGHT/BTN2
+
+page 1070 how to map gpio
+    > PORTID and pin configuration must be set in IOC/ioCFGn register
+    > 13.3.1
+    > 13.6 GPIO operation
+        > set IOC IOCFG1 PORT ID TO 0
+        > set IOC IOCFG1 register
+        > Toggle with GPIO DOUT33_0:DIO13
+page 1072 pin operation
+
+page 1075 pin design + configuration
+
+page 1106 pin configuration mappings
+
+need power AND clock before init gpio
+default entry point is resultISR (case sensitive)
+^ can put vector table here, but is not needed
+        first entry needs to be MSP i think

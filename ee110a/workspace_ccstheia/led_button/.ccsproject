@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?ccsproject version="1.0"?>
+<projectOptions>
+	<ccsVariant value="50:Theia-based"/>
+	<ccsVersion value="70.3.0"/>
+	<deviceFamily value="TMS470"/>
+	<connection value="common/targetdb/connections/TIXDS110_Connection.xml"/>
+	<executableActions value=""/>
+	<createSlaveProjects value=""/>
+	<ignoreDefaultDeviceSettings value="true"/>
+	<ignoreDefaultCCSSettings value="true"/>
+	<templateProperties value="id=empty_CC26X2R1_LAUNCHXL_nortos_ticlang.projectspec.led_button,buildProfile=release,isHybrid=true"/>
+	<activeTargetConfiguration value="targetConfigs/CC2652R1F.ccxml"/>
+	<isTargetConfigurationManual value="false"/>
+	<origin value="/home/steven/ti/simplelink_cc13xx_cc26xx_sdk_8_31_00_11/examples/nortos/CC26X2R1_LAUNCHXL/drivers/empty/ticlang/empty_CC26X2R1_LAUNCHXL_nortos_ticlang.projectspec"/>
+	<filesToOpen value=""/>
+</projectOptions>
