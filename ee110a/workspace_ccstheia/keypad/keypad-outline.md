@@ -47,7 +47,7 @@ Event queue
 
 ## Pseudo code
 ```C
-// Switch constants
+// Switch constants, MS
 # define DEBOUNCE_TIME      10
 # define REPEAT_RATE        20
 
@@ -56,16 +56,19 @@ Event queue
 # define KEYPAD_NUM_COLS     4
 # define MUX_PIN_A        DIO4    
 # define MUX_PIN_B        DIO21
-# define DEMUX_PIN_A      DIO26
-# define DEMUX_PIN_B      DIO27
-# define DEMUX_PIN_Y      DIO25
+# define KEYPAD_COL_0     DIO25
+# define KEYPAD_COL_1     DIO26
+# define KEYPAD_COL_2     DIO27
 
 // No key is all 0s
 # define NO_KEY           0x00
 
+
 # define INTERRUPT_TIME_MS    1
+# define BUFF_SIZE        1000
 
 // Shared variables in this code
+shared size_t buff;
 shared int16_t prev_switch_patt;
 shared int16_t curr_switch_patt;
 shared size_t debounce_counter;
@@ -91,7 +94,6 @@ void KeypadDemo() {
 // Reset all keypad and debouncing variables
 void InitKeypad() {
     prev_switch_patt = NO_KEY;
-    curr_switch_patt = NO_KEY;
     debounce_counter = DEBOUNCE_TIME;
 }
 
@@ -122,20 +124,14 @@ void UpdateSwitchPatt(){
     gpio_write(MUX_PIN_B, i);
         // Get columns by writing to demux and reading output
         for (int j = 0; j < KEYPAD_NUM_COLS; j++) {
-            // Select the column to read
-            gpio_write(DEMUX_PIN_A, j);
-            gpio_write(DEMUX_PIN_B, j);
             // For simplicity of pseudo code, this reads the column into the
-            // bit_number bit of switch patt. Technically need to bit mask and etc.
-            bit_number = 1 + j * KEYPAD_NUM_ROWS  + i;
-            // Invert the bit, use 1 as switch pressed, 0 as switch released
             gpio_read(!DEMUX_PIN_Y, curr_switch_patt, bit_number);
         }
     }
 }
 
 
-// Blocking code, called by timer event handler
+// Called by timer event handler
 void DebounceSwitches(){
     while (curr_switch_patt == prev_switch_patt) {
         // Start debouncing
@@ -176,4 +172,21 @@ void ProcessEventQueue() {
         event = event_queue.pop();
     }
 }
+
+void InitPower() {
+    ;
+    // Wait for the power on status to be true
+    while ( ) {}
+}
+
+void InitGPIO() {
+    GPIO.set(KEYPAD_COL_0, input);
+    GPIO.set(KEYPAD_COL_1, input);
+    GPIO.set(KEYPAD_COL_2, input);
+    GPIO.set(MUX_PIN_A, output);
+    GPIO.set(MUX_PIN_B, output);
+    GPIO.outputs.enable();
+}
+
+
 ```
