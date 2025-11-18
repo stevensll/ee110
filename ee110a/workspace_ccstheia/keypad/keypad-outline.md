@@ -2,50 +2,69 @@
 
 ## Hardware overview: 
 
-* 4 x 3 keypad
-* READ: 74ls251 MUX
-  * 3 GPIO, 1 output, 1 input
-  * toggle AB to output to rows
-* SCAN: 74lS139 DEMUX
-  * 2 GPIO, 2 output
-  * toggle AB to read column input into Y
-* 5 GPIO in total
+* 4 x 3 Keypad
+* READ: SNL74LS139ADR 
+* * 2 output on GPIO
+* * write to select row to read
+* * note that logical high from 139ADR is 3.4V, should be ok when tying with 3v3
+
+* SCAN: Directly
+* * 3 input on GPIO
+* * scan the col pattern from the given row. Note that this is tied to 3v3,
+
 * Pull up resistors
 * Diodes to prevent columns shorting out
 * **NO** ghosting diodes
 
 ## Software overview:
 
-General initialization
+```C
 
-* init power
-* init timers
-* init gpio pins
-* init timer compare register for interrupts
-* init event queue
+// Turn on power for peripheral devices
+# define INTERRUPT_TIME_MS      1
 
-Keypad specific
+void InitPower() {
+    PRCM.power.peripheral.enable();
+    bool power_status = false;
+    while (!power_status) {
+        power_status = PRCM.power.GetStatus();
+    }
+}
 
-For 1 row:
+void InitClocks() {
+    PRCM.clocks.GPIO.enable();
+    PRCM.clocks.TIMER0.enable();
+    // Wait for clocks to load
+    bool clock_status = false; 
+    while (!clock_status) {
+        clock_status = PRCM.clocks.GetStatus();
+    }
+}
 
-* Need to output to 74ls139 AB to write to row
-* Then read column from 74LS253 at Y. While doing this need to toggle AB 
+// Setup timer for 1 ms interrupts
+void InitGPT0() {
+    GPT.GPT0.config = 32_BIT_MODE;
+    GPT.GPT0.timerA.enable();
+    GPT.GPT0.timerA.tmeout.enable();
+    // Install the timer handler
+    GPT.GPT0.handler = HandleSwitchPresses();
+}
 
-Repeat this for all 4 rows
+// Enable input and outputs for keypad row/cols
+void InitGPIO() {
+    GPIO.set(KEYPAD_COL_0, input);
+    GPIO.set(KEYPAD_COL_1, input);
+    GPIO.set(KEYPAD_COL_2, input);
+    GPIO.set(MUX_PIN_A, output);
+    GPIO.set(MUX_PIN_B, output);
+    GPIO.outputs.enable();
+}
 
-Now have the new entire switch pattern
+void InitStack() {
+    stack = malloc(STACK_SIZE);
+}
+```
 
-Debounce it by comparing to old pattern
-
-* Apply auto repeat if necessary
-* if debounced the switch, create event queue
-
-Event queue 
-
-
-12 keys = 12 bits, use 16 bits. 1 = 0x0, 9 = 0x100000000, 0 = 0x100000000000
-
-## Pseudo code
 ```C
 // Switch constants, MS
 # define DEBOUNCE_TIME      10
@@ -60,52 +79,43 @@ Event queue
 # define KEYPAD_COL_1     DIO26
 # define KEYPAD_COL_2     DIO27
 
+# define BUFFER_SIZE      1000
+# define STACK_SIZE        512
+
 // No key is all 0s
 # define NO_KEY           0x00
 
 
-# define INTERRUPT_TIME_MS    1
-# define BUFF_SIZE        1000
+/* SHARED VARIABLES */
+word_t *buff;
+int32_t stack;
+size_t buff_index;
 
-// Shared variables in this code
-shared size_t buff;
 shared int16_t prev_switch_patt;
 shared int16_t curr_switch_patt;
 shared size_t debounce_counter;
 
 
-event_queue;
 
 void KeypadDemo() {
-    // No pseudo code for these functions, self explanatory
+    InitStack();
     InitPower();
     InitClocks();
-    InitGPIO();
     InitGPT();
-    //
+    EnableInterrupts();
+    InitGPIO();
     InitKeypad();
     InitEventQueue();
     while (1) {
-        TimerEventHandler();
-        ProcessEventQueue();
+        // Nothing, the code is just based on interrupts.
     }
 }
 
 // Reset all keypad and debouncing variables
 void InitKeypad() {
     prev_switch_patt = NO_KEY;
+    curr_switch_patt = NO_KEY;
     debounce_counter = DEBOUNCE_TIME;
-}
-
-// Upon every interrupt, check if there are keys pressed and debounce if any
-// Note part of this function should not be actual code, it is done by hardware
-void TimerEventHandler() {
-    if (general_purpose_timer.time() = INTERRUPT_TIME_MS) {
-        // Actual code we append to the timer event handler
-        HandleSwitchPresses();
-        //
-        general_purpose_timer.reload();
-    }
 }
 
 // Check if we have any switches pressed and debounce if we do
@@ -119,14 +129,14 @@ void HandleSwitchPresses() {
 void UpdateSwitchPatt(){
     prev_switch_patt = curr_switch_patt;
     for (int i = 0; i < KEYPAD_NUM_ROWS; i++) {
-    // Write to rows
-    gpio_write(MUX_PIN_A, i);
-    gpio_write(MUX_PIN_B, i);
-        // Get columns by writing to demux and reading output
-        for (int j = 0; j < KEYPAD_NUM_COLS; j++) {
-            // For simplicity of pseudo code, this reads the column into the
-            gpio_read(!DEMUX_PIN_Y, curr_switch_patt, bit_number);
-        }
+        // Write to rows
+        gpio_write(MUX_PIN_A, i);
+        gpio_write(MUX_PIN_B, i);
+        // For simplicity of pseudo code, this reads the column into the 
+        // into the switch pattern, technically need to do bit shifts
+        gpio_read(KEYPAD_COL_0, curr_switch_patt, bit_number);
+        gpio_read(KEYPAD_COL_1, curr_switch_patt, bit_number);
+        gpio_read(KEYPAD_COL_2, curr_switch_patt, bit_number);
     }
 }
 
@@ -148,45 +158,19 @@ void DebounceSwitches(){
     debounce_counter = DEBOUNCE_TIME;
 }
 
-// Create the event queue (clear it)
+// "Dummy" event queue, just allocate memory space for the buffer
 void InitEventQueue() {
-    event_queue.init();
+    buffer = malloc(BUFFER_SIZE); 
+    buff_index = 0;
 }
 
-// Since our code only handles 1 type of event, our enqueue/processe event queue
-// should not be as complicated in implementation. It should just print the
-// switch pattern to the buffer
-
-void EnqueueEventQueue(event) {
-    event_queue.add(event);
-}
-void ProcessEventQueue() {
-    event = event_queue.pop();
-    while (event) {
-        switch(event.id) {
-            // Print the switch pattern to the buffer;
-            case KEY_EVENT: {
-                PrintToBuffer(event.value);
-            }
-        }
-        event = event_queue.pop();
+// "Dummy" enqueue, just write the event to the buffer.
+void EnqueueEvent(event) {
+    buffer[buff_index] = event;
+    buff_index++;
+    // Wrap around to start of buffer if run out of size
+    if (buff_index == BUFFER_SIZE) {
+        buff_index = 0;
     }
 }
-
-void InitPower() {
-    ;
-    // Wait for the power on status to be true
-    while ( ) {}
-}
-
-void InitGPIO() {
-    GPIO.set(KEYPAD_COL_0, input);
-    GPIO.set(KEYPAD_COL_1, input);
-    GPIO.set(KEYPAD_COL_2, input);
-    GPIO.set(MUX_PIN_A, output);
-    GPIO.set(MUX_PIN_B, output);
-    GPIO.outputs.enable();
-}
-
-
 ```

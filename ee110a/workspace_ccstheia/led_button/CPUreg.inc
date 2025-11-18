@@ -16,10 +16,10 @@
 ;     2/17/22  Glen George      initial revision
 ;    11/05/23  Glen George      updated style and comments
 ;    10/30/25  Steven Lei       add references to manual
-
+;    11/15/25  Steven Lei       update manual reference page numbers
 
 ; base addresses
-;   table 3.1, pg 319
+;   table 3.1, pg 310
 PRCM_BASE_ADDR     .equ    0x40082000   ;power/reset/clock module registers
 SCS_BASE_ADDR      .equ    0xE000E000   ;core system control space registers
 
@@ -36,7 +36,7 @@ CCR_OFF            .equ    0x0D14       ;configuration control register
 
 
 ; PRCM - power/reset/clock module registers
-;   table 7.27, pg 548
+;   table 7.27, pg 544
 
 PDCTL0_OFF         .equ    0x012C       ;power domain control register 0
 PDCTL1_OFF         .equ    0x017C       ;power domain control register 1
@@ -59,15 +59,15 @@ STACK_ALIGN_8      .equ    0x00000100   ;keep stack on 8 byte alignment
 
 
 ; PDCTL0 - power domain control register 0
-;   sec 7.8.2.46, pg 598
+;   sec 7.8.2.46, pg 595
 ;
 PD_PERIPH_EN       .equ    0x00000004   ;enable power to peripheral domain
 PD_SERIAL_EN       .equ    0x00000002   ;enable power to serial domain
 PD_RFC_EN          .equ    0x00000001   ;enable power to RF core domain
 
 
-; PDSTAT0       - power domain status register 0
-;   sec 7.8.2.50, pg 602
+; PDSTAT0 - power domain status register 0
+;   sec 7.8.2.50, pg 599
 
 PD_PERIPH_STAT     .equ    0x00000004   ;status of peripheral power domain
 PD_SERIAL_STAT     .equ    0x00000002   ;status of serial power domain
@@ -75,19 +75,19 @@ PD_RFC_STAT        .equ    0x00000001   ;status of RF core power domain
 
 
 ; CLKLOADCTL - load PRCM settings to CLKCTRL domain
-
+;   sec 7.8.2.5, pg 552
 CLKLOADCTL_LD      .equ    0x00000001   ;load CLKCTL power domain
 CLKLOADCTL_STAT    .equ    0x00000002   ;status of CLKCLK power domain load
 
 
 ; GPIOCLKGR - GPIO clock gate settings
-
+;   sec 7.8.2.11, pg 560
 GPIOCLK_EN         .equ    0x00000001   ;enable GPIO clock in run mode
 GPIOCLK_ON         .equ    0x00000100   ;force GPIO clock on in all modes
 
 
 ; GPTCLKGR - GPT clock gate settings
-
+;   sec 7.8.2.14, pg 563
 GPTCLK_EN          .equ    0x0000000F   ;enable all GPT clocks in run mode
 GPT0CLK_EN         .equ    0x00000001   ;enable GPT0 clock in run mode
 GPT1CLK_EN         .equ    0x00000002   ;enable GPT1 clock in run mode
@@ -101,7 +101,7 @@ GPT3CLK_ON         .equ    0x00000800   ;force GPT3 clock on in all modes
 
 
 ; GPTCLKDIV - GPT clock divisor register
-
+;   sec 7.8.2.34, pg 583
 GPTCLKDIV_1        .equ    0x00000000   ;divide GPT incoming clock by 1
 GPTCLKDIV_2        .equ    0x00000001   ;divide GPT incoming clock by 2
 GPTCLKDIV_4        .equ    0x00000002   ;divide GPT incoming clock by 4
