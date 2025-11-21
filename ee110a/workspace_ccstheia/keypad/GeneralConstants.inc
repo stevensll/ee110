@@ -19,5 +19,5 @@ BYTES_PER_WORD     .equ    4            ;4 bytes in each word
 
 ; Bit operations
 
-ALL_ONES            .equ    ~0          ;all bits set
+ALL_ONES            .equ    0xFFFFFFFF  ;all bits set
 ALL_ZEROES          .equ    0           ;all bits clear

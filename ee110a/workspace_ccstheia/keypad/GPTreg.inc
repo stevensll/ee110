@@ -17,6 +17,7 @@
 ;    11/05/23  Glen George      updated style and comments
 ;    11/05/23  Glen George      added more register constants
 ;    11/15/25  Steven Lei       add references to manual
+;    11/17/25  Steven Lei       add constant definitions for TxMR, TxPR
 
 
 ; base addresses
@@ -71,6 +72,11 @@ GPT_CFG_16x2       .equ    0x00000004   ;configure as two 16-bit timers
 
 ; TxMR - timer A/B mode register
 ;   sec 15.5.1.2. pg 1353
+GPT_TxMR_PERIODIC  .equ    0x00000002   ;Periodic timer mode
+
+; TxPR - timer A/B prescale register
+;   sec 15.5.1.14, pg 1370
+GPT_TxPR_PRSCL_1    .equ   0x00000000   ;Prescale = 1
 
 ; CTL - control register
 ;   sec 15.5.1.4, pg 1357  
