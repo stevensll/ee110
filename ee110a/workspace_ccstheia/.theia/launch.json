@@ -53,6 +53,15 @@
                 "name": "led_button",
                 "resourceId": "/led_button"
             }
+        },
+        {
+            "name": "keypad",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "keypad",
+                "resourceId": "/keypad"
+            }
         }
     ]
 }

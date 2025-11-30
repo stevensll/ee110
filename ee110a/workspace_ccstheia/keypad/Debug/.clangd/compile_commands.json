@@ -1,3 +1,17 @@
 [
-
+   {
+      "directory" : "/home/steven/Documents/ee110/ee110a/workspace_ccstheia/keypad/Debug",
+      "command"   : "clang++ -I\"/home/steven/Documents/ee110/ee110a/workspace_ccstheia/keypad\" -I\"/home/steven/Documents/ee110/ee110a/workspace_ccstheia/keypad/Debug\" -I\"/home/steven/ti/simplelink_cc13xx_cc26xx_sdk_8_31_00_11/source\" -I\"/home/steven/ti/simplelink_cc13xx_cc26xx_sdk_8_31_00_11/kernel/nortos\" -I\"/home/steven/ti/simplelink_cc13xx_cc26xx_sdk_8_31_00_11/kernel/nortos/posix\" -isystem\"/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/include/armv7em-ti-none-eabihf/c++/v1\" -isystem\"/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/include/c++/v1\" -isystem\"/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/lib/clang/18/include\" -isystem\"/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/include/c\" -I\"/home/steven/Documents/ee110/ee110a/workspace_ccstheia/keypad/Debug/syscfg\" -DDeviceFamily_CC26X2 -xc",
+      "file"      : "/home/steven/Documents/ee110/ee110a/workspace_ccstheia/keypad/Debug/syscfg/ti_devices_config.c"
+   },
+   {
+      "directory" : "/home/steven/Documents/ee110/ee110a/workspace_ccstheia/keypad/Debug",
+      "command"   : "clang++ -I\"/home/steven/Documents/ee110/ee110a/workspace_ccstheia/keypad\" -I\"/home/steven/Documents/ee110/ee110a/workspace_ccstheia/keypad/Debug\" -I\"/home/steven/ti/simplelink_cc13xx_cc26xx_sdk_8_31_00_11/source\" -I\"/home/steven/ti/simplelink_cc13xx_cc26xx_sdk_8_31_00_11/kernel/nortos\" -I\"/home/steven/ti/simplelink_cc13xx_cc26xx_sdk_8_31_00_11/kernel/nortos/posix\" -isystem\"/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/include/armv7em-ti-none-eabihf/c++/v1\" -isystem\"/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/include/c++/v1\" -isystem\"/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/lib/clang/18/include\" -isystem\"/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/include/c\" -I\"/home/steven/Documents/ee110/ee110a/workspace_ccstheia/keypad/Debug/syscfg\" -DDeviceFamily_CC26X2 -xc",
+      "file"      : "/home/steven/Documents/ee110/ee110a/workspace_ccstheia/keypad/Debug/syscfg/ti_drivers_config.c"
+   },
+   {
+      "directory" : "/home/steven/Documents/ee110/ee110a/workspace_ccstheia/keypad/Debug",
+      "command"   : "clang++ -I\"/home/steven/Documents/ee110/ee110a/workspace_ccstheia/keypad\" -I\"/home/steven/Documents/ee110/ee110a/workspace_ccstheia/keypad/Debug\" -I\"/home/steven/ti/simplelink_cc13xx_cc26xx_sdk_8_31_00_11/source\" -I\"/home/steven/ti/simplelink_cc13xx_cc26xx_sdk_8_31_00_11/kernel/nortos\" -I\"/home/steven/ti/simplelink_cc13xx_cc26xx_sdk_8_31_00_11/kernel/nortos/posix\" -isystem\"/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/include/armv7em-ti-none-eabihf/c++/v1\" -isystem\"/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/include/c++/v1\" -isystem\"/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/lib/clang/18/include\" -isystem\"/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/include/c\" -I\"/home/steven/Documents/ee110/ee110a/workspace_ccstheia/keypad/Debug/syscfg\" -DDeviceFamily_CC26X2",
+      "file"      : "/home/steven/Documents/ee110/ee110a/workspace_ccstheia/keypad/KeypadDemo.asm"
+   }
 ]

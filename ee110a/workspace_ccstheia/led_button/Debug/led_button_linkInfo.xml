@@ -3,7 +3,7 @@
    <banner>TI ARM Clang Linker Unix v4.0.3.LTS</banner>
    <copyright>Copyright (c) 1996-2018 Texas Instruments Incorporated</copyright>
    <command_line>/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/bin/tiarmlnk -I/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/lib -o led_button.out -mled_button.map -i/home/steven/ti/simplelink_cc13xx_cc26xx_sdk_8_31_00_11/source -i/home/steven/ti/simplelink_cc13xx_cc26xx_sdk_8_31_00_11/kernel/nortos -i/home/steven/Documents/ee110/ee110a/workspace_ccstheia/led_button/Debug/syscfg -i/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/lib --diag_wrap=off --display_error_number --warn_sections --xml_link_info=led_button_linkInfo.xml --rom_model ./LEDButton.o ./syscfg/ti_devices_config.o ./syscfg/ti_drivers_config.o ../cc13x2_cc26x2_nortos.cmd -lti_utils_build_linker.cmd.genlibs -llibc.a --start-group -llibc++.a -llibc++abi.a -llibc.a -llibsys.a -llibsysbm.a -llibclang_rt.builtins.a -llibclang_rt.profile.a --end-group --cg_opt_level=z</command_line>
-   <link_time>0x6903f4ed</link_time>
+   <link_time>0x692b8c00</link_time>
    <link_errors>0x0</link_errors>
    <output_file>/home/steven/Documents/ee110/ee110a/workspace_ccstheia/led_button/Debug/led_button.out</output_file>
    <entry_point>

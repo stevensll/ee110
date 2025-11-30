@@ -21,7 +21,14 @@
 ; Revision History:
 ;    11/17/25  Steven Lei       initial revision
 
+ 
+ .include  "GeneralConstants.inc"
+ .include  "GeneralMacros.inc"
 
+ .include  "CPUreg.inc"
+ .include  "GPIOreg.inc"
+ .include  "IOCreg.inc"
+ .include  "GPTreg.inc"
 ; InitPower
 ;
 ; Description:       Turn on the power to the peripherals. 

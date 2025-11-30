@@ -2,9 +2,7 @@
 # Automatically-generated file. Do not edit!
 ################################################################################
 
-SHELL = cmd.exe
-
-CG_TOOL_ROOT := C:/ti/ccs2031/ccs/tools/compiler/ti-cgt-armllvm_4.0.4.LTS
+CG_TOOL_ROOT := /opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS
 
 GEN_OPTS__FLAG := @"syscfg/ti_utils_build_compiler.opt" 
 GEN_CMDS__FLAG := 
@@ -13,22 +11,20 @@ ORDERED_OBJS += \
 "./LEDButton.o" \
 "./syscfg/ti_devices_config.o" \
 "./syscfg/ti_drivers_config.o" \
-"./submission/slei_hw1/LEDButton.o" \
+"../cc13x2_cc26x2_nortos.cmd" \
 $(GEN_CMDS__FLAG) \
 -Wl,-lti_utils_build_linker.cmd.genlibs \
 -Wl,-llibc.a \
 
 -include ../makefile.init
 
-RM := DEL /F
-RMDIR := RMDIR /S/Q
+RM := rm -rf
+RMDIR := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include subdir_vars.mk
--include submission/slei_hw1/subdir_vars.mk
 -include subdir_rules.mk
--include submission/slei_hw1/subdir_rules.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -132,23 +128,23 @@ EXE_OUTPUTS__QUOTED += \
 
 
 # All Target
-all: $(OBJS) $(GEN_CMDS)
+all: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@$(MAKE) --no-print-directory -Onone "led_button.out"
 
 # Tool invocations
-led_button.out: $(OBJS) $(GEN_CMDS)
+led_button.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: "$@"'
 	@echo 'Invoking: Arm Linker'
-	"C:/ti/ccs2031/ccs/tools/compiler/ti-cgt-armllvm_4.0.4.LTS/bin/tiarmclang.exe" -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mlittle-endian -mthumb -Oz -gdwarf-3 -march=armv7e-m -Wl,-m"led_button.map" -Wl,-i"C:/ti/simplelink_cc13xx_cc26xx_sdk_8_31_00_11/source" -Wl,-i"C:/ti/simplelink_cc13xx_cc26xx_sdk_8_31_00_11/kernel/nortos" -Wl,-i"C:/Users/Steven/Documents/ee110/ee110a/workspace_ccstheia/led_button/Debug/syscfg" -Wl,-i"C:/ti/ccs2031/ccs/tools/compiler/ti-cgt-armllvm_4.0.4.LTS/lib" -Wl,--diag_wrap=off -Wl,--display_error_number -Wl,--warn_sections -Wl,--xml_link_info="led_button_linkInfo.xml" -Wl,--rom_model -o "led_button.out" $(ORDERED_OBJS)
+	"/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/bin/tiarmclang" -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mlittle-endian -mthumb -Oz -gdwarf-3 -march=armv7e-m -Wl,-m"led_button.map" -Wl,-i"/home/steven/ti/simplelink_cc13xx_cc26xx_sdk_8_31_00_11/source" -Wl,-i"/home/steven/ti/simplelink_cc13xx_cc26xx_sdk_8_31_00_11/kernel/nortos" -Wl,-i"/home/steven/Documents/ee110/ee110a/workspace_ccstheia/led_button/Debug/syscfg" -Wl,-i"/opt/ccstudio/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS/lib" -Wl,--diag_wrap=off -Wl,--display_error_number -Wl,--warn_sections -Wl,--xml_link_info="led_button_linkInfo.xml" -Wl,--rom_model -o "led_button.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 
 # Other Targets
 clean:
 	-$(RM) $(GEN_MISC_FILES__QUOTED)$(GEN_FILES__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "LEDButton.o" "syscfg\ti_devices_config.o" "syscfg\ti_drivers_config.o" "submission\slei_hw1\LEDButton.o" 
-	-$(RM) "syscfg\ti_devices_config.d" "syscfg\ti_drivers_config.d" 
-	-$(RM) "LEDButton.d" "submission\slei_hw1\LEDButton.d" 
+	-$(RM) "LEDButton.o" "syscfg/ti_devices_config.o" "syscfg/ti_drivers_config.o" 
+	-$(RM) "syscfg/ti_devices_config.d" "syscfg/ti_drivers_config.d" 
+	-$(RM) "LEDButton.d" 
 	-$(RMDIR) $(GEN_MISC_DIRS__QUOTED)
 	-@echo 'Finished clean'
 	-@echo ' '

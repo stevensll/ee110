@@ -75,11 +75,11 @@ void InitStack() {
 # define KEYPAD_NUM_COLS     4
 # define MUX_PIN_A        DIO4    
 # define MUX_PIN_B        DIO21
-# define KEYPAD_COL_0     DIO25
-# define KEYPAD_COL_1     DIO26
-# define KEYPAD_COL_2     DIO27
+# define KEYPAD_COL_0     DIO20
+# define KEYPAD_COL_1     DIO19
+# define KEYPAD_COL_2     DIO18
 
-# define BUFFER_SIZE      1000
+# define BUFFER_SIZE        12
 # define STACK_SIZE        512
 
 // No key is all 0s
@@ -91,8 +91,8 @@ word_t *buff;
 int32_t stack;
 size_t buff_index;
 
-shared int16_t prev_switch_patt;
-shared int16_t curr_switch_patt;
+shared int16_t prev_key_patt;
+shared int16_t curr_key_patt;
 shared size_t debounce_counter;
 
 
@@ -113,46 +113,46 @@ void KeypadDemo() {
 
 // Reset all keypad and debouncing variables
 void InitKeypad() {
-    prev_switch_patt = NO_KEY;
-    curr_switch_patt = NO_KEY;
+    prev_key_patt = NO_KEY;
+    curr_key_patt = NO_KEY;
     debounce_counter = DEBOUNCE_TIME;
 }
 
 // Check if we have any switches pressed and debounce if we do
-void HandleSwitchPresses() {
-    UpdateSwitchPatt();
-    if (curr_switch_patt != NO_KEY) {
+void KeypressHandler() {
+    UpdateKeyPatt();
+    if (curr_key_patt != NO_KEY) {
         DebounceSwitches();
     }
 }
 // Get the switch pattern from the keypad by scanning rows and reading cols (note MUXes).
-void UpdateSwitchPatt(){
-    prev_switch_patt = curr_switch_patt;
+void UpdateKeyPatt(){
+    prev_key_patt = curr_key_patt;
     for (int i = 0; i < KEYPAD_NUM_ROWS; i++) {
         // Write to rows
-        gpio_write(MUX_PIN_A, i);
-        gpio_write(MUX_PIN_B, i);
+        gpio_write(MUX_PIN_A, i&0b1);
+        gpio_write(MUX_PIN_B, i&0b10);
         // For simplicity of pseudo code, this reads the column into the 
         // into the switch pattern, technically need to do bit shifts
-        gpio_read(KEYPAD_COL_0, curr_switch_patt, bit_number);
-        gpio_read(KEYPAD_COL_1, curr_switch_patt, bit_number);
-        gpio_read(KEYPAD_COL_2, curr_switch_patt, bit_number);
+        gpio_read(KEYPAD_COL_0, curr_key_patt, bit_number);
+        gpio_read(KEYPAD_COL_1, curr_key_patt, bit_number);
+        gpio_read(KEYPAD_COL_2, curr_key_patt, bit_number);
     }
 }
 
 
 // Called by timer event handler
-void DebounceSwitches(){
-    while (curr_switch_patt == prev_switch_patt) {
+void DebounceKeyPatt(){
+    while (curr_key_patt == prev_key_patt) {
         // Start debouncing
-        UpdateSwitchPatt();
         debounce_counter--;
         if (debounce_counter == 0) {
             // Done debouncing, set up for auto repeat
             debounce_counter == REPEAT_RATE;
             // Add key event with the switch pattern
-            EnqueueEvent(KEY_EVENT | curr_switch_patt);
+            EnqueueEvent(KEY_EVENT | curr_key_patt);
         }
+        UpdateKeyPatt();
     }
     // Switch pattern changed so reset
     debounce_counter = DEBOUNCE_TIME;
@@ -172,5 +172,29 @@ void EnqueueEvent(event) {
     if (buff_index == BUFFER_SIZE) {
         buff_index = 0;
     }
+}
+// The key pattern should be in a one hot scheme. This only handles 1 keypress
+// at a time, e.g. 0b00000001000
+int ConvertKeyPattToValue(int16_t key_patt) {
+    // Should never occur, but have just in case
+    if (key_patt == 0) {
+        return -1
+    }
+
+    int key_value = 1
+    while(1) {
+        // Mask the LSB
+        if (key_patt&0b1)) {
+            break;
+        }
+        key_value++;
+        // Shift the pattern
+        key_patt = key_patt >> 1
+    }
+    // 10th key = *, 11th key = 0, and 12th key = - on my keypad
+    if (key_value == 11) {
+        key_value = 0;
+    }
+    return key_value;
 }
 ```
