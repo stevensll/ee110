@@ -407,32 +407,24 @@ WriteToRow:
 ReadCol:     
         ; read input to rows
         LDR     R2, [R1, #GPIO_DIN31_0_OFF] ;read the column as active high
-        ; R2 holds the raw keypad input data
-        ; R3 is used as a temporary register
-        ; R4 will hold the final 3-bit keypad state (at bits 0, 1, 2)
 
-        ; --- Initialization ---
-        MOV     R4, #0                          ; Clear R4 to start accumulating the result
+        MOV     R4, #0                          
 
-        ; --- Process Column 0 (Target: Bit 0) ---
-        LSR     R3, R2, #KEYPAD_COL_0           ; Get col 0 value to R3[0]
-        MVN     R3, R3                          ; Invert the active-low input
-        AND     R3, R3, #0x01                   ; Isolate the 0/1 result in R3[0]
-        ORR     R4, R4, R3, LSL #0              ; Merge R3 into R4, shifted to Bit 0 (no shift necessary)
+        LSR     R3, R2, #KEYPAD_COL_0           ;move col bit to 0th bit
+        MVN     R3, R3                          ;negate it
+        AND     R3, R3, #0x01                   ;mask
+        ORR     R4, R4, R3, LSL #0              ;and rotate back to right pos
 
-        ; --- Process Column 1 (Target: Bit 1) ---
-        LSR     R3, R2, #KEYPAD_COL_1           ; Get col 1 value to R3[0]
-        MVN     R3, R3                          ; Invert the active-low input
-        AND     R3, R3, #0x01                   ; Isolate the 0/1 result in R3[0]
-        ORR     R4, R4, R3, LSL #1              ; Merge R3 into R4, shifted to Bit 1
+        LSR     R3, R2, #KEYPAD_COL_1          
+        MVN     R3, R3                          
+        AND     R3, R3, #0x01                   
+        ORR     R4, R4, R3, LSL #1              
 
-        ; --- Process Column 2 (Target: Bit 2) ---
-        LSR     R3, R2, #KEYPAD_COL_2           ; Get col 2 value to R3[0]
-        MVN     R3, R3                          ; Invert the active-low input
-        AND     R3, R3, #0x01                   ; Isolate the 0/1 result in R3[0]
-        ORR     R4, R4, R3, LSL #2              ; Merge R3 into R4, shifted to Bit 2
+        LSR     R3, R2, #KEYPAD_COL_2          
+        MVN     R3, R3                         
+        AND     R3, R3, #0x01                  
+        ORR     R4, R4, R3, LSL #2              
 
-        ; R4 now holds the combined keypad state: R4[2]R4[1]R4[0]
         MOV     R0, R4                          ;return must be in R0
 
 DoneUpdateKeyPatt:
