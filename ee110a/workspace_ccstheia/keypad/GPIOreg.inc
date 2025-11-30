@@ -30,7 +30,7 @@ GPIO_BASE_ADDR     .equ    0x40022000   ;General Purpose I/O registers
 
 
 ; GPIJO register offsets in memmory map
-;   sec 13.10.2, pg 1083
+;   sec 13.10.2, pg 1108
 GPIO_DOUT3_0_OFF   .equ    0x0000       ;data out bits 0 to 3
 GPIO_DOUT7_4_OFF   .equ    0x0004       ;data out bits 4 to 7
 GPIO_DOUT11_8_OFF  .equ    0x0008       ;data out bits 8 to 11

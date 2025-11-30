@@ -14,29 +14,6 @@
  .include  "Keypad.inc"
  .include  "KeypadDemo.inc"
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; data
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-        .data
-        ; the stack (must be double-word aligned)
-
-        .align  8
-TopOfStack:     .bes    TOTAL_STACK_SIZE
-
-
-        .align 4
-        ; the event queue, NOTE: for this demo, it is just a dummy buffer
-eventQueue:         .space  QUEUE_SIZE * BYTES_PER_WORD
-
-        ; variables
-        .align  4
-debounceCounter:        .space          BYTES_PER_WORD
-prevKeyPatt:            .space          BYTES_PER_WORD
-currKeyPatt:            .space          BYTES_PER_WORD
-queueIndex:             .space          BYTES_PER_WORD
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -66,11 +43,9 @@ Main:
         BL      MoveVecTable            ;move the vector table to RAM
         BL      InitGPIO                ;setup the I/O (only output)
 
-                                        ;initialize the variables
-
         BL      InstallGPT0Handler      ;install the event handler
         BL      InitGPT0                ;initialize the internal timer
-
+                                        ;initialize the variables
         BL      InitEventQueue
         BL      InitKeypad
 
@@ -249,23 +224,25 @@ InitKeypad:
 
 KeypressHandler:
         PUSH    {R0, R1, R2, R3, R4, R5, R6, LR} ;save touched registers
-        BL ToggleGPIOInterrupt
+        NOP
+        MOV32   R1, GPIO_BASE_ADDR
+        NOP
+        STREG   ((1 << DEMUX_PIN_A)), R1, GPIO_DTGL31_0_OFF
+
         ; BL      UpdateKeyPatt           ;get the new key pattern
         ; CMP     R0, #NO_KEYPATT         ;check if there is some key press
         ; BEQ     DoneKeypressHandler     ;   dont have any key press, so done
         ; BL      DebounceKeyPatt         ;have some key press, so debounce
 ResetInt:                               ;reset interrupt bit for GPT0A
         MOV32   R1, GPT0_BASE_ADDR      ;get base address
-        STREG   GPT_IRQ_TATO, R1, GPT_ICLR_OFF ;clear timer A timeout interrupt
+        ; STREG   GPT_IRQ_TATO, R1, GPT_ICLR_OFF ;clear timer A timeout interrupt
 
 DoneKeypressHandler:
         POP     {R0, R1, R2, R3, R4, R5, R6, LR} ;restore registers
         BX      LR                      ;done so return
 
-ToggleGPIOInterrupt:
-        MOV32   R1, GPIO_BASE_ADDR
-        STREG   ((1 << DEMUX_PIN_A) | (1 << DEMUX_PIN_B)), R1, GPIO_DTGL31_0_OFF
-        BX      LR
+
+
 ; WriteKeypadRows
 ; Description:       Handles keypresses by checking if any key is pressed and
 ;                    debouncing the pressed keys. This routine is expected to 
@@ -608,6 +585,31 @@ InstallGPT0Handler:
 
         BX      LR                      ;all done, return
 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; data
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+        .data
+        ; the stack (must be double-word aligned)
+
+        .align  8
+TopOfStack:     .bes    TOTAL_STACK_SIZE
+
+
+        .align 4
+        ; the event queue, NOTE: for this demo, it is just a dummy buffer
+eventQueue:         .space  QUEUE_SIZE * BYTES_PER_WORD
+
+        ; variables
+        .align  4
+debounceCounter:        .space          BYTES_PER_WORD
+prevKeyPatt:            .space          BYTES_PER_WORD
+currKeyPatt:            .space          BYTES_PER_WORD
+queueIndex:             .space          BYTES_PER_WORD
 
 
         .end

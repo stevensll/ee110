@@ -31,12 +31,20 @@
  .include  "GPTreg.inc"
  .include  "Keypad.inc"
  .include  "KeypadDemo.inc"
+        .def InitPower
+        .def InitClocks
+        .def InitGPIO
+        .def InitGPT0
+        .def MoveVecTable
 
          ; the interrupt vector table in SRAM
 
+        .data
         .align  512
 VecTable:       .space  VEC_TABLE_SIZE * BYTES_PER_WORD
 
+
+        .text
 ; InitPower
 ; Description:       Turn on the power to the peripherals. 
 ;
@@ -64,7 +72,6 @@ VecTable:       .space  VEC_TABLE_SIZE * BYTES_PER_WORD
 ;
 ; Revision History:  02/17/21   Glen George      initial revision
 ;                    10/30/25   Steven Lei       retrieved from Glen's website
-        .def InitPower
 InitPower:
         MOV32   R1, PRCM_BASE_ADDR              ;get base for power registers
         STREG   PD_PERIPH_EN, R1, PDCTL0_OFF    ;turn on peripheral power
@@ -107,9 +114,7 @@ DonePeriphPower:                                ;done turning on peripherals
 ;   
 ; Revision History:  02/17/21   Glen George      initial revision
 ;                    10/30/25   Steven Lei       retrieved from Glen's website
-        .def InitClocks
 InitClocks:
-
 
         MOV32   R1, PRCM_BASE_ADDR              ;get base for power registers
 
@@ -164,7 +169,6 @@ DoneClockSetup:                                 ;done setting up clock
 ;                    10/28/25   Steven Lei       retrieved from website
 ;                    11/17/25   Steven Lei       update pinout for HW2 (keypad)
 
-        .def InitGPIO
 InitGPIO:
 
         MOV32   R1, IOC_BASE_ADDR       ;get base addr for I/O control registers
@@ -219,7 +223,6 @@ InitGPIO:
 ;                    11/17/25   Steven Lei       update procedure to reflect
 ;                                                steps in manual guide
 
-        .def InitGPT0
 InitGPT0:
 
 GPT0AConfig:            ;configure timer 0A as a down counter generating
@@ -280,7 +283,6 @@ GPT0AConfig:            ;configure timer 0A as a down counter generating
 ;
 ; Revision History:  11/03/21   Glen George      initial revision
        
-        .def MoveVecTable
 
 MoveVecTable:
 

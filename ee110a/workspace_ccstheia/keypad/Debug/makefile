@@ -129,7 +129,8 @@ EXE_OUTPUTS__QUOTED += \
 
 
 # All Target
-all: keypad.out
+all: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
+	@$(MAKE) --no-print-directory -Onone "keypad.out"
 
 # Tool invocations
 keypad.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
