@@ -1,3 +1,4 @@
+"./Init.o"
 "./KeypadDemo.o"
 "./syscfg/ti_devices_config.o"
 "./syscfg/ti_drivers_config.o"

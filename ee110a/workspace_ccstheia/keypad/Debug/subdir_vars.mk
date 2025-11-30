@@ -10,6 +10,7 @@ SYSCFG_SRCS += \
 ../empty.syscfg 
 
 ASM_SRCS += \
+../Init.asm \
 ../KeypadDemo.asm 
 
 C_SRCS += \
@@ -32,11 +33,13 @@ GEN_OPTS += \
 ./syscfg/ti_utils_build_compiler.opt 
 
 OBJS += \
+./Init.o \
 ./KeypadDemo.o \
 ./syscfg/ti_devices_config.o \
 ./syscfg/ti_drivers_config.o 
 
 ASM_DEPS += \
+./Init.d \
 ./KeypadDemo.d 
 
 GEN_MISC_FILES += \
@@ -49,6 +52,7 @@ GEN_MISC_DIRS__QUOTED += \
 "syscfg" 
 
 OBJS__QUOTED += \
+"Init.o" \
 "KeypadDemo.o" \
 "syscfg/ti_devices_config.o" \
 "syscfg/ti_drivers_config.o" 
@@ -69,6 +73,7 @@ GEN_FILES__QUOTED += \
 "syscfg/ti_utils_build_compiler.opt" 
 
 ASM_DEPS__QUOTED += \
+"Init.d" \
 "KeypadDemo.d" 
 
 SYSCFG_SRCS__QUOTED += \

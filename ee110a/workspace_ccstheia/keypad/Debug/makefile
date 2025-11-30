@@ -8,6 +8,7 @@ GEN_OPTS__FLAG := @"syscfg/ti_utils_build_compiler.opt"
 GEN_CMDS__FLAG := 
 
 ORDERED_OBJS += \
+"./Init.o" \
 "./KeypadDemo.o" \
 "./syscfg/ti_devices_config.o" \
 "./syscfg/ti_drivers_config.o" \
@@ -128,8 +129,7 @@ EXE_OUTPUTS__QUOTED += \
 
 
 # All Target
-all: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
-	@$(MAKE) --no-print-directory -Onone "keypad.out"
+all: keypad.out
 
 # Tool invocations
 keypad.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
@@ -142,9 +142,9 @@ keypad.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 # Other Targets
 clean:
 	-$(RM) $(GEN_MISC_FILES__QUOTED)$(GEN_FILES__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "KeypadDemo.o" "syscfg/ti_devices_config.o" "syscfg/ti_drivers_config.o" 
+	-$(RM) "Init.o" "KeypadDemo.o" "syscfg/ti_devices_config.o" "syscfg/ti_drivers_config.o" 
 	-$(RM) "syscfg/ti_devices_config.d" "syscfg/ti_drivers_config.d" 
-	-$(RM) "KeypadDemo.d" 
+	-$(RM) "Init.d" "KeypadDemo.d" 
 	-$(RMDIR) $(GEN_MISC_DIRS__QUOTED)
 	-@echo 'Finished clean'
 	-@echo ' '

@@ -73,7 +73,7 @@ GPT_CFG_16x2       .equ    0x00000004   ;configure as two 16-bit timers
 ; TxMR - timer A/B mode register
 ;   sec 15.5.1.2. pg 1353
 GPT_TxMR_PERIODIC  .equ    0x00000002   ;Periodic timer mode
-
+GPT_TxCDIR_DOWN    .equ    0x00 << 4
 ; TxPR - timer A/B prescale register
 ;   sec 15.5.1.14, pg 1370
 GPT_TxPR_PRSCL_1    .equ   0x00000000   ;Prescale = 1

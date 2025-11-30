@@ -78,8 +78,9 @@ void InitStack() {
 # define KEYPAD_COL_0     DIO20
 # define KEYPAD_COL_1     DIO19
 # define KEYPAD_COL_2     DIO18
+# define BAD_KEY_VALUE       -1
 
-# define BUFFER_SIZE        12
+# define QUEUE_SIZE         10
 # define STACK_SIZE        512
 
 // No key is all 0s
@@ -87,9 +88,10 @@ void InitStack() {
 
 
 /* SHARED VARIABLES */
-word_t *buff;
-int32_t stack;
-size_t buff_index;
+word_t *event_queue;
+int16_t *queue_index;
+
+int64_t *stack;
 
 shared int16_t prev_key_patt;
 shared int16_t curr_key_patt;
@@ -108,6 +110,22 @@ void KeypadDemo() {
     InitEventQueue();
     while (1) {
         // Nothing, the code is just based on interrupts.
+    }
+}
+
+/* "Dummy" event queue, just allocate memory space for the buffer */
+void InitEventQueue() {
+    event_queue = calloc(QUEUE_SIZE, BYTES_PER_WORD);
+    queu_index = 0;
+}
+
+/* "Dummy" enqueue, just write the event to the buffer. */
+void EnqueueEvent(event) {
+    event_queue[queue_index] = event;
+    queue_index++;
+    // Wrap around to start of buffer if run out of size
+    if (buff_index == BUFFER_SIZE) {
+        buff_index = 0;
     }
 }
 
@@ -158,43 +176,36 @@ void DebounceKeyPatt(){
     debounce_counter = DEBOUNCE_TIME;
 }
 
-// "Dummy" event queue, just allocate memory space for the buffer
-void InitEventQueue() {
-    buffer = malloc(BUFFER_SIZE); 
-    buff_index = 0;
+/* Table of key pattern to key values. Non int keys are converted to ASCII */
+
+int16_t [][2] KeyPattTable = {
+    /* Pattern  Return value    ASCII Equivalent    Key Pressed */
+    {0x01,      1            /* 1                   1           */}   
+    {0x02,      2            /* 2                   2           */}
+    {0x04,      3            /* 3                   3           */}
+    {0x08,      4            /* 4                   4           */}
+    {0x10,      5            /* 5                   5           */}
+    {0x20,      6            /* 6                   6           */}
+    {0x40,      7            /* 7                   7           */}
+    {0x80,      8            /* 8                   8           */}
+    {0x100,     9            /* 9                   9           */}
+    {0x200,     42           /* *                   *           */}
+    {0x400,     0            /* 0                   0           */}
+    {0x800,     35           /* #                   #           */}
 }
 
-// "Dummy" enqueue, just write the event to the buffer.
-void EnqueueEvent(event) {
-    buffer[buff_index] = event;
-    buff_index++;
-    // Wrap around to start of buffer if run out of size
-    if (buff_index == BUFFER_SIZE) {
-        buff_index = 0;
-    }
-}
-// The key pattern should be in a one hot scheme. This only handles 1 keypress
-// at a time, e.g. 0b00000001000
-int ConvertKeyPattToValue(int16_t key_patt) {
-    // Should never occur, but have just in case
-    if (key_patt == 0) {
-        return -1
-    }
+/* Converts the raw key pattern to a key value through lookup in the table*/
+/* If the pattern is not in the table, just return BAD_KEY_VALUE */
 
-    int key_value = 1
-    while(1) {
-        // Mask the LSB
-        if (key_patt&0b1)) {
-            break;
+int GetKeyValueFromPatt(int16_t key_patt) {
+    for (size_t i = 0; i < key_patt_table; i++) {
+        int16_t row = key_patt_table[i];
+        int16_t tab_patt = row[0];
+        int16_t tab_value = row[1];
+        if (key_patt = tab_patt) {
+            return tab_value;
         }
-        key_value++;
-        // Shift the pattern
-        key_patt = key_patt >> 1
     }
-    // 10th key = *, 11th key = 0, and 12th key = - on my keypad
-    if (key_value == 11) {
-        key_value = 0;
-    }
-    return key_value;
+    return BAD_KEY_VALUE;
 }
 ```

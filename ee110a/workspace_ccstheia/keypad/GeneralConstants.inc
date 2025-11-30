@@ -26,6 +26,10 @@ BYTES_PER_HALF_WORD .equ   2            ;4 bytes in a half word
 ALL_ONES            .equ    0xFFFFFFFF  ;all bits set
 ALL_ZEROES          .equ    0           ;all bits clear
 
+;Bit masks          
+BIT_0_MASK          .equ    0x01        ;all bits clear except bit 0
+BIT_1_MASK          .equ    0x02        ;all bits clear except bit 1
+
 CLK_PER_MS          .equ    48000
 
 ;  .endif  GENERAL_CONSTANTS_INC

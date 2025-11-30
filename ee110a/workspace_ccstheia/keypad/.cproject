@@ -111,7 +111,7 @@
                         </tool>
                     </fileInfo>
                     <sourceEntries>
-                        <entry excluding="Init.asm|Keypad.asm" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+                        <entry excluding="Keypad.asm" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
                     </sourceEntries>
                 </configuration>
             </storageModule>
