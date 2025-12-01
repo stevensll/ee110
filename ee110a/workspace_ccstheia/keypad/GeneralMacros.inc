@@ -51,7 +51,6 @@ MOV32   .macro  reg, value
 
 
 
-
 ; MOVA
 ;
 ; Description:       This macro generates code to move a 32-bit address into

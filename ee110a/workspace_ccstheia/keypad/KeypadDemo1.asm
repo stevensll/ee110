@@ -53,9 +53,9 @@ queueIndex:             .space          BYTES_PER_WORD
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         .text
 
-        .global ResetISR
+        .global resetISR
         
-ResetISR:
+resetISR:
 
 Main:
         MOVA    R0, TopOfStack               ;initialize the stack pointers
@@ -249,23 +249,20 @@ InitKeypad:
 ; Revision History:  11/27/25   Steven Lei       initial revision
 
 KeypressHandler:
-        PUSH    {LR} ;save touched registers
-
-
-        BL      UpdateKeyPatt           ;get the new key pattern
-        CMP     R0, #NO_KEYPATT         ;check if there is some key press
-        BEQ     DoneKeypressHandler     ;   dont have any key press, so done
-        BL      DebounceKeyPatt         ;have some key press, so debounce
+        ; PUSH    {R0, R1, R2, R3, R4, R5, R6, LR} ;save touched registers
         MOV32   R1, GPIO_BASE_ADDR
-        STREG   (1 << INT_TEST_PIN), R1, GPIO_DTGL31_0_OFF
+        STREG   ((1 << DEMUX_PIN_A)), R1, GPIO_DTGL31_0_OFF
+
+        ; BL      UpdateKeyPatt           ;get the new key pattern
+        ; CMP     R0, #NO_KEYPATT         ;check if there is some key press
+        ; BEQ     DoneKeypressHandler     ;   dont have any key press, so done
+        ; BL      DebounceKeyPatt         ;have some key press, so debounce
 ResetInt:                               ;reset interrupt bit for GPT0A
         MOV32   R1, GPT0_BASE_ADDR      ;get base address
-        STREG   GPT_IRQ_TATO, R1, GPT_ICLR_OFF ;clear timer A timeout interrupt
-		NOP
-		NOP
+        ; STREG   GPT_IRQ_TATO, R1, GPT_ICLR_OFF ;clear timer A timeout interrupt
 
 DoneKeypressHandler:
-        POP     {LR} ;restore registers
+        ; POP     {R0, R1, R2, R3, R4, R5, R6, LR} ;restore registers
         BX      LR                      ;done so return
 
 
@@ -328,7 +325,29 @@ DoneReadKeypadCol:
         BX      LR
 
 
+; ReadKeypadCols:     
+;         ; read input to rows
+;         MOV32   R1, GPIO_BASE_ADDR
+;         LDR     R2, [R1, #GPIO_DIN31_0_OFF] ;read the column as active high
 
+;         MOV     R4, #0                          
+
+;         LSR     R3, R2, #KEYPAD_COL_0           ;move col bit to 0th bit
+;         MVN     R3, R3                          ;negate it
+;         AND     R3, R3, #BIT_0_MASK             ;mask
+;         ORR     R4, R4, R3, LSL #0              ;and rotate back to right pos
+
+;         LSR     R3, R2, #KEYPAD_COL_1          
+;         MVN     R3, R3                          
+;         AND     R3, R3, #BIT_0_MASK                   
+;         ORR     R4, R4, R3, LSL #1              
+
+;         LSR     R3, R2, #KEYPAD_COL_2          
+;         MVN     R3, R3                         
+;         AND     R3, R3, #BIT_0_MASK                  
+;         ORR     R4, R4, R3, LSL #2              
+
+        ; MOV     R0, R4                          ;return must be in R0
 
 ; UpdateKeyPatt
 
@@ -347,40 +366,40 @@ UpdateKeyPattLoop:
         MOV     R0, R6
         BL      WriteKeypadRows
 
-ReadKeypadCols:
-         ; read input to rows
-         MOV32   R1, GPIO_BASE_ADDR
-         LDR     R2, [R1, #GPIO_DIN31_0_OFF] ;read the column as active high
+        MOV     R0, #KEYPAD_COL_0
+        ADD     R1, R6, #1
+        MOV     R2, #KEYPAD_NUM_COLS
+        MUL     R1, R1, R2
+        SUB     R1, R1, #3
+        BL      ReadKeypadCol
+        ORR     R8, R3, R3
 
-         MOV     R4, #0
+        MOV     R0, #KEYPAD_COL_1
+        ADD     R1, R6, #1
+        MOV     R2, #KEYPAD_NUM_COLS
+        MUL     R1, R1, R2
+        SUB     R1, R1, #2
+        BL      ReadKeypadCol
+        ORR     R8, R3, R3
 
-         LSR     R3, R2, #KEYPAD_COL_0           ;move col bit to 0th bit
-         MVN     R3, R3                          ;negate it
-         AND     R3, R3, #BIT_0_MASK             ;mask
-         ORR     R4, R4, R3, LSL #0              ;and rotate back to right pos
-
-         LSR     R3, R2, #KEYPAD_COL_1
-         MVN     R3, R3
-         AND     R3, R3, #BIT_0_MASK
-         ORR     R4, R4, R3, LSL #1
-
-         LSR     R3, R2, #KEYPAD_COL_2
-         MVN     R3, R3
-         AND     R3, R3, #BIT_0_MASK
-         ORR     R4, R4, R3, LSL #2
-
-         MOV     R0, R4                          ;return must be in R0
+        MOV     R0, #KEYPAD_COL_2
+        ADD     R1, R6, #1
+        MOV     R2, #KEYPAD_NUM_COLS
+        MUL     R1, R1, R2
+        SUB     R1, R1, #1
+        BL      ReadKeypadCol
+        ORR     R8, R3, R3
         
 CheckDoneUpdateKeyPattLoop:
         ADD     R6, R6, #1
-        CMP     R6, #1
+        CMP     R6, #KEYPAD_NUM_ROWS
         BNE     UpdateKeyPattLoop
         ;BEQ    DoneUpdateKeyPatt
 
 DoneUpdateKeyPatt:
-        POP     {LR}
+        POP     {PC}
         MOVA    R1, currKeyPatt            ;get the curr key patt from memory
-        STR     R0, [R1]
+        STR     R8, [R1]   
         BX      LR                              ;done so return
 
 ; DebounceKeyPatt
@@ -412,7 +431,7 @@ DoneUpdateKeyPatt:
 ; Revision History:  11/27/25   Steven Lei       initial revision
 
 DebounceKeyPatt:
-        PUSH    {LR}
+
 DebounceKeyPattLoop:                    ;loop until counter is 0 or patt changes
 
         MOVA    R2, prevKeyPatt             ;get the previous patt from memory
@@ -421,33 +440,34 @@ DebounceKeyPattLoop:                    ;loop until counter is 0 or patt changes
         LDR     R0, [R2]
 
         CMP     R1, R0                      ;compare prev to current key patt
-        BNE     ResetDebounceCounter        ;patts different, so reset counter
+        BNE     DoneDebounceKeyPatt         ;patts different, so done debouncing
 
 StartDebounceKeyPatt:                   ;prev and curr patts same, so debounce
-        BL      UpdateKeyPatt               ;get the new switch pattern
-
         MOVA    R2, debounceCounter         ;get debounce counter from memory
         LDR     R1, [R2]                    
-        SUBS    R1, R1, #1                  ;decrement counter, check if 0
-        BEQ     ProcessDebouncedKeyPatt		;	counter is 0, so key debounced
-        STR     R1, [R2]                    ;counter not 0, write to memory
-        BNE     DoneDebounceKeyPatt         ;	and keep looping
+        SUBS    R1, R1, #1                  ;and decrement counter, check for 0
+        BEQ     ProcessDebouncedKeyPatt
+        STR     R1, [R2]                    ;write new counter value to memory
+        PUSH    {LR}
+        BL      UpdateKeyPatt               ;get the new switch pattern
+        POP     {PC}
+        BNE     DebounceKeyPattLoop         ;counter is not 0, keep debouncing
 
 ProcessDebouncedKeyPatt:                ;counter is 0, so process the key patt
         MOVA    R2, debounceCounter         ;get counter from memory
-        MOV32   R1, (REPEAT_RATE_MS)        ;setup counter for auto repeat
+        MOV32   R1, (REPEAT_RATE_MS)         ;setup counter for auto repeat
         STR     R1, [R2]                    ;write new counter value to memory
+        PUSH    {LR}
         BL      GetKeyValueFromPatt         ;get the key value pressed
         BL      EnqueueEvent                ;   and enqueue the key event
-		B		DoneDebounceKeyPatt			;done
+        POP     {PC}
+        B       DebounceKeyPattLoop         ;loop back for auto repeat
 
-ResetDebounceCounter: 					;done debouncing, so always reset counter
+DoneDebounceKeyPatt:                    ;done debouncing, so always reset counter
         MOVA    R1, debounceCounter         ;get the counter from memory
-        MOV32   R0, (DEBOUNCE_TIME_MS)    	;reset to debounce time
+        MOV32   R0, (DEBOUNCE_TIME_MS)    ;reset to debounce time
         STR     R0, [R1]                    ;write to memory
 
-DoneDebounceKeyPatt:
-        POP     {LR}						;restore return address
         BX      LR                          ;done so return
 
 
@@ -685,9 +705,9 @@ GPT0AConfig:            ;configure timer 0A as a down counter generating
         STREG   GPT_CFG_32x1, R1, GPT_CFG_OFF   ;setup one 32-bit timer
 
         STREG   GPT_IRQ_TATO, R1, GPT_IMR_OFF   ;enable timeout interrupt
-        STREG   GPT_TxMR_PERIODIC | GPT_TxCDIR_DOWN, R1, GPT_TAMR_OFF ;set timer mode to periodic
+        STREG   GPT_TxMR_PERIODIC, R1, GPT_TAMR_OFF ;set timer mode to periodic
                                                 ;set timer for 1 ms interrupt
-        STREG   (KEYPAD_INT_MS * CLK_PER_MS), R1, GPT_TAILR_OFF
+        STREG   (KEYPAD_INT_MS * CLK_PER_MS), R1, GPT_TAILR_OFF 
         STREG   GPT_TxPR_PRSCL_1, R1, GPT_TAPR_OFF ;set prescale to 1
         STREG   GPT_CTL_TAEN, R1, GPT_CTL_OFF   ;enable timer A with changes
 
@@ -740,11 +760,10 @@ InitGPIO:
         MOV32   R0, IOCFG_GEN_DOUT_4MA  ;setup for general 4mA outputs
         STR     R0, [R1, #IOCFG4]       ;write config for keypad demux pin a
         STR     R0, [R1, #IOCFG21]      ;                              pin b  
-		STR		R0, [R1, #IOCFG5]		;				   interrupt test pin
 
         MOV32   R1, GPIO_BASE_ADDR      ;get base addr for GPIO pins
                                         ;and write enable for output pins
-        STREG   ((1 << DEMUX_PIN_A) | (1 << DEMUX_PIN_B) | (1 << INT_TEST_PIN)), R1, GPIO_DOE31_0_OFF
+        STREG   ((1 << DEMUX_PIN_A) | (1 << DEMUX_PIN_B)), R1, GPIO_DOE31_0_OFF
 
 
         BX      LR                      ;done so return

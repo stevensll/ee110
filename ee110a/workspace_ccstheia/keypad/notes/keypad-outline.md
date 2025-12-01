@@ -161,7 +161,7 @@ void UpdateKeyPatt(){
 
 // Called by timer event handler
 void DebounceKeyPatt(){
-    while (curr_key_patt == prev_key_patt) {
+    if (curr_key_patt == prev_key_patt) {
         // Start debouncing
         debounce_counter--;
         if (debounce_counter == 0) {

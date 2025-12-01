@@ -12,6 +12,9 @@ QUEUE_SIZE         .equ    10           ;number of queue entries
 GPT0A_EX_NUM       .equ    31           ;exception number for GPT0 Timer A
 GPT0A_IRQ_NUM      .equ    GPT0A_EX_NUM - 16 ;interrupt number for GPT0 Timer A
 
+; Interrupt check pin
+
+INT_TEST_PIN       .equ    5
 
 ; I/O constants
 

@@ -25,7 +25,7 @@ BAD_KEY_VALUE       .equ        -1
 
 ; Debounce parameters
 
-DEBOUNCE_TIME_MS    .equ        400
+DEBOUNCE_TIME_MS    .equ        50
 REPEAT_RATE_MS      .equ        500
 
 KEYPAD_INT_MS       .equ        1       ;1ms/1KHz interrupts
