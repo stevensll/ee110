@@ -13,9 +13,9 @@
 KEYPAD_NUM_ROWS     .equ        4
 KEYPAD_NUM_COLS     .equ        3   
 
-KEYPAD_COL_0        .equ        20
-KEYPAD_COL_1        .equ        19
-KEYPAD_COL_2        .equ        18
+KEYPAD_COL_1        .equ        20
+KEYPAD_COL_2        .equ        19
+KEYPAD_COL_3        .equ        18
 
 DEMUX_PIN_A         .equ        4
 DEMUX_PIN_B         .equ        21

@@ -109,6 +109,8 @@ KeyPattTable:
     .half   0x200,     42                   ;*                  ;*
     .half   0x400,      0                   ;0                  ;0
     .half   0x800,     35                   ;#                  ;#
+    .half	0x07,	  100					;					;1+2+3
+    .half	0x38,	  101					;					;4+5+6
 EndKeyPattTable:
 
 ; GetKeyValueFromPatt:
@@ -252,7 +254,9 @@ KeypressHandler:
         PUSH    {LR} ;save touched registers
 
 
-        BL      UpdateKeyPatt           ;get the new key pattern
+        BL      UpdateKeyPatt           ;update the key pattern
+        MOVA    R1, currKeyPatt			;get key pattern from memory
+        LDR		R0, [R1]
         CMP     R0, #NO_KEYPATT         ;check if there is some key press
         BEQ     DoneKeypressHandler     ;   dont have any key press, so done
         BL      DebounceKeyPatt         ;have some key press, so debounce
@@ -299,30 +303,33 @@ DoneKeypressHandler:
 ;
 ; Revision History:  11/27/25   Steven Lei       initial revision
 ; Arguments:        R0
-WriteKeypadRows:
-        MOV32   R2, GPIO_BASE_ADDR          ;get the GPIO base for writing
-        AND     R1, R0, #BIT_0_MASK         ;get the 0th bit of the row number
-        LSL     R3, R1, #DEMUX_PIN_A            ;and place it at demux pin A
-        AND     R1, R0, #BIT_1_MASK         ;get the 1st bit of the row number
-        LSL     R4, R1, #(DEMUX_PIN_B-1)        ;and place it at demux pin B
-        ORR     R4, R4, R3                  ;combine the bit patterns
-        STR     R4, [R2, #GPIO_DOUT31_0_OFF]    ;and output to the demux pins
-DoneWriteKeypadRows:                        
+; Returns:			R7
+WriteDemuxPins:
+        SUB     R0, R0, #1					;decrement index since 1-indexed
+        AND     R6, R0, #BIT_0_MASK         ;get the 0th bit of the row index
+        LSL     R6, R6, #DEMUX_PIN_A            ;and place it at demux pin A
+        AND     R7, R0, #BIT_1_MASK         ;get the 1st bit of the row index
+        LSL     R7, R7, #(DEMUX_PIN_B-1)        ;and place it at demux pin B
+        ORR     R8, R7, R6                  ;combine the bit patterns
+
+        MOV32   R5, GPIO_BASE_ADDR          ;get the GPIO base for writing
+        STR     R8, [R5, #GPIO_DOUT31_0_OFF]    ;and output to the demux pins
+DoneWriteDemuxPins:
         BX      LR                              ;done so return
 
 ;ReadKeypadCol
-;Args: R0 - col to read, R1 - rotation amount
-;Return: R3
+;Args: R0 - col to read, R1 - shift amount
+;Return: R6
 
 ReadKeypadCol:
-        MOV32   R2, GPIO_BASE_ADDR
-        LDR     R3, [R2]
-        MOV     R4, #0
+        MOV32   R5, GPIO_BASE_ADDR			;get the GPIO base for reading
+	    LDR     R6, [R5, #GPIO_DIN31_0_OFF] ;read the col bit, is active low
+        MOV     R7, #0						;hold the correct bit pattern
 
-        LSR     R3, R3, R0                      ;move col bit to 0th bit
-        MVN     R3, R3                          ;negate it
-        AND     R3, R3, #BIT_0_MASK             ;mask
-        LSL     R3, R3, R1                      ;and shift it to the right spot
+        LSR     R6, R6, R0                  ;move col bit to 0 bit
+        MVN     R6, R6                      ;negate it for active high
+        AND     R6, R6, #BIT_0_MASK         ;mask the bit, only want 0 bit
+        LSL     R6, R6, R1                  ;and shift it to the right spot
 
 DoneReadKeypadCol:
         BX      LR
@@ -333,55 +340,53 @@ DoneReadKeypadCol:
 ; UpdateKeyPatt
 
 UpdateKeyPatt:
-        PUSH    {LR}
-        MOVA    R1, currKeyPatt
+        PUSH    {LR}					   ;save return address
+        MOVA    R1, currKeyPatt			   ;get the curr key patt from memory
         LDR     R0, [R1]
         MOVA    R1, prevKeyPatt            ;get the prev key patt from memory
         STR     R0, [R1]                   ;and update to the current key patt
 
-        MOV     R6, #0                     ;setup looping through keypad rows
-        MOV     R8, #0                     ;hold the pattern here
+        MOV     R2, #1                     ;hold row index for looping through
+        MOV     R3, #0                     ;hold the final key pattern
+		MOV 	R4, #0					   ;hold the shift amount for key pattern
 
 UpdateKeyPattLoop:
-        ; output to demux
-        MOV     R0, R6
-        BL      WriteKeypadRows
 
-ReadKeypadCols:
-         ; read input to rows
-         MOV32   R1, GPIO_BASE_ADDR
-         LDR     R2, [R1, #GPIO_DIN31_0_OFF] ;read the column as active high
+        MOV     R0, R2					   ;argument row index must be in R0
+        BL      WriteDemuxPins			   ;write the row index to demux pins
 
-         MOV     R4, #0
-
-         LSR     R3, R2, #KEYPAD_COL_0           ;move col bit to 0th bit
-         MVN     R3, R3                          ;negate it
-         AND     R3, R3, #BIT_0_MASK             ;mask
-         ORR     R4, R4, R3, LSL #0              ;and rotate back to right pos
-
-         LSR     R3, R2, #KEYPAD_COL_1
-         MVN     R3, R3
-         AND     R3, R3, #BIT_0_MASK
-         ORR     R4, R4, R3, LSL #1
-
-         LSR     R3, R2, #KEYPAD_COL_2
-         MVN     R3, R3
-         AND     R3, R3, #BIT_0_MASK
-         ORR     R4, R4, R3, LSL #2
-
-         MOV     R0, R4                          ;return must be in R0
+ReadKeypadCols:								;read columns at each row
         
+        MOV     R0, #KEYPAD_COL_1			;argument col index is in R0
+		MOV		R1, R4						;argument shift amt index is R1
+        BL      ReadKeypadCol				;read the col bit of the row
+        ORR     R3, R3, R6					;return is R6, accumulate in R3
+
+		ADD		R4, R4, #1					;increment shift amount
+        MOV     R0, #KEYPAD_COL_2			;argument col index is in R0
+		MOV		R1, R4						;argument shift amt index is R1
+        BL      ReadKeypadCol				;read the col bit of the row
+        ORR     R3, R3, R6					;return is R6, accumulate in R3
+
+		ADD		R4, R4, #1					;increment shift amount
+        MOV     R0, #KEYPAD_COL_3			;argument col index is in R0
+		MOV		R1, R4						;argument shift amt index is R1
+        BL      ReadKeypadCol				;read the col bit of the row
+        ORR     R3, R3, R6					;return is R6, accumulate in R3
+
+		ADD		R4, R4, #1					;increment shift amount
+
 CheckDoneUpdateKeyPattLoop:
-        ADD     R6, R6, #1
-        CMP     R6, #1
-        BNE     UpdateKeyPattLoop
-        ;BEQ    DoneUpdateKeyPatt
+        ADD     R2, R2, #1					;advance to next row to read cols
+        CMP     R2, #(KEYPAD_NUM_ROWS + 1)	;check if looped through rows
+        BNE     UpdateKeyPattLoop			;	not done looping, so continue
+        ;BEQ    DoneUpdateKeyPatt			;looped all rows, so done
 
 DoneUpdateKeyPatt:
-        POP     {LR}
-        MOVA    R1, currKeyPatt            ;get the curr key patt from memory
-        STR     R0, [R1]
-        BX      LR                              ;done so return
+        POP     {LR}						;restore the return address
+        MOVA    R1, currKeyPatt           	;get the curr key patt from memory
+        STR     R3, [R1]					;	and store the new key patt
+        BX      LR                          ;done so return
 
 ; DebounceKeyPatt
 ; Description:       Debounces the key pattern pressed 
