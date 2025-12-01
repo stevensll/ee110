@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;keypad/KeypadDemo1.asm&apos; to &apos;KeypadDemo.asm&apos;" description="Rename resource &apos;KeypadDemo1.asm&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="KeypadDemo1.asm" name="KeypadDemo.asm" stamp="1764546138867" updateReferences="true"/>
+</session>

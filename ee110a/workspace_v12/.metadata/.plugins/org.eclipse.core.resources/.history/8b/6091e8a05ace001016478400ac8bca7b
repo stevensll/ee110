@@ -1,0 +1,24 @@
+
+        MOV     R0, #KEYPAD_COL_0
+        ADD     R1, R6, #1
+        MOV     R2, #KEYPAD_NUM_COLS
+        MUL     R1, R1, R2
+        SUB     R1, R1, #3
+        BL      ReadKeypadCol
+        ORR     R8, R3, R3
+
+        MOV     R0, #KEYPAD_COL_1
+        ADD     R1, R6, #1
+        MOV     R2, #KEYPAD_NUM_COLS
+        MUL     R1, R1, R2
+        SUB     R1, R1, #2
+        BL      ReadKeypadCol
+        ORR     R8, R3, R3
+
+        MOV     R0, #KEYPAD_COL_2
+        ADD     R1, R6, #1
+        MOV     R2, #KEYPAD_NUM_COLS
+        MUL     R1, R1, R2
+        SUB     R1, R1, #1
+        BL      ReadKeypadCol
+        ORR     R8, R3, R3
