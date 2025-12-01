@@ -1,18 +1,18 @@
 
 
 ; utilities
- .include  "GeneralMacros.inc"
- .include  "GeneralConstants.inc"
+ .include  "inc/GeneralMacros.inc"
+ .include  "inc/GeneralConstants.inc"
 
 ; CC26x2 hardware
- .include  "CPUreg.inc"
- .include  "GPIOreg.inc"
- .include  "IOCreg.inc"
- .include  "GPTreg.inc"
+ .include  "inc/CPUreg.inc"
+ .include  "inc/GPIOreg.inc"
+ .include  "inc/IOCreg.inc"
+ .include  "inc/GPTreg.inc"
 
 ; This program specific
- .include  "Keypad.inc"
- .include  "KeypadDemo.inc"
+ .include  "inc/Keypad.inc"
+ .include  "inc/KeypadDemo.inc"
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -22,6 +22,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
         .data
+        .ref prevKeyPatt
+	.ref currKeyPatt
+
         ; the stack (must be double-word aligned)
 
         .align  8
@@ -33,19 +36,7 @@ TopOfStack:     .bes    TOTAL_STACK_SIZE
         .align  512
 VecTable:       .space  VEC_TABLE_SIZE * BYTES_PER_WORD
 
-
-        .align 4
-        ; the event queue, NOTE: for this demo, it is just a dummy buffer
-eventQueue:         .space  QUEUE_SIZE * BYTES_PER_WORD
-
-        ; variables
-        .align  4
-debounceCounter:        .space          BYTES_PER_WORD
-prevKeyPatt:            .space          BYTES_PER_WORD
-currKeyPatt:            .space          BYTES_PER_WORD
-queueIndex:             .space          BYTES_PER_WORD
-
-
+  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; code
@@ -54,7 +45,14 @@ queueIndex:             .space          BYTES_PER_WORD
         .text
 
         .global ResetISR
-        
+        .ref InitKeypad
+        .ref DebounceKeyPatt
+        .ref InitPower
+        .ref InitClocks
+        .ref InitGPT0
+        .ref InitGPIO
+        .ref InitEventQueue
+		.ref UpdateKeyPatt
 ResetISR:
 
 Main:
@@ -83,142 +81,6 @@ Forever:
 
 DoneMain:
         B      Forever
-
-; KeyPattTable
-; Description:      This table maps key pattern presses from the 4x3 keypad
-;                   to an integer value. The key pattern should be active
-;                   high for the key that is pressed. For special characters
-;                   like * and #, the corresponding value are their ASCII int
-;                   encodings. The patterns are stored as half words (16 bits)
-;                   since there are only 12 keys.
-;   
-; Revision history: 11/27/25    Steven Lei      initial revision
-;                   
-
-KeyPattTable:
-            ;Pattern    ;Return value       ;ASCII Equivalent   ;Key pressed
-    .half   0x01,       1                   ;1                  ;1
-    .half   0x02,       2                   ;2                  ;2
-    .half   0x04,       3                   ;3                  ;3
-    .half   0x08,       4                   ;4                  ;4
-    .half   0x10,       5                   ;5                  ;5
-    .half   0x20,       6                   ;6                  ;6
-    .half   0x40,       7                   ;7                  ;7
-    .half   0x80,       8                   ;8                  ;8
-    .half   0x100,      9                   ;9                  ;9
-    .half   0x200,     42                   ;*                  ;*
-    .half   0x400,      0                   ;0                  ;0
-    .half   0x800,     35                   ;#                  ;#
-    .half	0x07,	  100					;					;1+2+3
-    .half	0x38,	  101					;					;4+5+6
-EndKeyPattTable:
-
-; GetKeyValueFromPatt:
-; Description:       Converts the argument key pattern (1 = key pressed)
-;                    to an integer value by looking up the pattern in the 
-;                    KeyPattTable. If the pattern is not in the table, returns
-;                    BAD_KEY_VALUE.
-;           
-; Operation:         The KeyPattTable is loaded from memory. The key pattern
-;                    argument is then compared to each pattern entry in the 
-;                    table and if a match is found, the value is loaded. If
-;                    no match, the return is BAD_KEY_VALUE
-;
-; Arguments:         currKeyPatt: the key pattern to convert
-; Return Value:      R0: the key value 
-;
-; Local Variables:   None.
-; Shared Variables:  KeyPattTable (R): the table is read to find a key value
-;                    currKeyPatt (R): the key patt is read for table lookup
-; Global Variables:  None.
-;
-; Input:             None.
-; Output:            None.
-;
-; Error Handling:    None.
-;
-; Algorithms:        None.
-; Data Structures:   None.
-;
-; Registers Changed: R0, R1, R2, R4, R5
-; Stack Depth:       0 words
-;
-;
-; Revision History:  11/27/25   Steven Lei       initial revision
-
-GetKeyValueFromPatt:
-
-SetupGetKeyValueFromPatt:               ;load the key patt and table variables
-        MOVA    R1, currKeyPatt             ;get the curr key patt
-        LDR     R0, [R1]                    
-        ADR     R4, KeyPattTable            ;get the start of the table
-
-GetKeyValueLoop:                        ;loop through the key patt table
-        LDRH    R1, [R4], #BYTES_PER_HALF_WORD  ;get the table key pattern 
-        LDRH    R2, [R4], #BYTES_PER_HALF_WORD  ;get the table key value
-        CMP     R0, R1                      ;compare the patterns
-        BEQ     DoneGetKeyValue             ;   match, so return value
-        ;BNE    CheckEndKeyPattTable        ;no match, so check if at table end
-
-CheckEndKeyPattTable:                   ;check if loop has hit the end of table
-        ADR     R5, EndKeyPattTable         ;get table end address
-        CMP     R4, R5                      ;compare to current address
-        BNE     GetKeyValueLoop             ;   not end of table, so still loop
-        ;BEQ    NoKeyValueFound             ;end of table, so patt not in table
-    
-NoKeyValueFound:                        ;key pattern is not in table
-        MOV     R2, #BAD_KEY_VALUE          ;so value is BAD_KEY_VALUE
-        ;B       DoneGetKeyValue            ;return
-
-DoneGetKeyValue:
-        MOV     R0, R2                      ;return value must be in R0
-        BX      LR                          ;done so return
-
-
-; InitKeypad    
-; Description:       Initializes the keypad by resetting the debounce counter
-;                    and key pattern variables.
-;                    
-; Operation:         The debounceCounter is reset to the debounce time and the
-;                    currKeyPatt and prevKeyPatt are reset to NO_KEYPATT.
-;
-; Arguments:         None.
-; Return Value:      None.
-;
-; Local Variables:   None.
-; Shared Variables:  debounceCounter (W): debounce time is written
-;                    currKeyPatt (W): NO_KEYPATT is written
-;                    prevKeyPatt (W): NO_KEYPATT is written
-;
-; Global Variables:  None.
-;
-; Input:             None.
-; Output:            None.
-;
-; Error Handling:    None.
-;
-; Algorithms:        None.
-; Data Structures:   None.
-;
-; Registers Changed: R0, R1
-; Stack Depth:       0 words
-;
-;
-; Revision History:  11/27/25   Steven Lei       initial revision
-
-InitKeypad:
-        MOVA    R1, debounceCounter         ;get the counter from memory
-        MOV32   R0, (DEBOUNCE_TIME_MS)
-        STR     R0, [R1]                    ;and reset it to the debounce time
-
-        MOVA    R1, prevKeyPatt             ;get the previous patt from memory  
-        MOV     R0, #NO_KEYPATT
-        STR     R0, [R1]                    ;and reset it to no key pressed
-        
-        MOVA    R1, currKeyPatt             ;get the curr patt from memory
-        STR     R0, [R1]                    ;and reset it to no key pressed
-
-        BX      LR                          ;done so return 
 
 
 ; KeyPressHandler
@@ -255,8 +117,8 @@ KeypressHandler:
 
 
         BL      UpdateKeyPatt           ;update the key pattern
-        MOVA    R1, currKeyPatt			;get key pattern from memory
-        LDR		R0, [R1]
+        MOVA    R1, currKeyPatt	        ;get key pattern from memory
+        LDR	R0, [R1]
         CMP     R0, #NO_KEYPATT         ;check if there is some key press
         BEQ     DoneKeypressHandler     ;   dont have any key press, so done
         BL      DebounceKeyPatt         ;have some key press, so debounce
@@ -271,489 +133,6 @@ ResetInt:                               ;reset interrupt bit for GPT0A
 DoneKeypressHandler:
         POP     {LR} ;restore registers
         BX      LR                      ;done so return
-
-
-
-; WriteKeypadRows
-; Description:       Handles keypresses by checking if any key is pressed and
-;                    debouncing the pressed keys. This routine is expected to 
-;                    be called by the timer interrupt every 1 ms.
-;                    
-; Operation:         Call UpdateKeyPatt to find the currently pressed keys
-;                    and then DbounceKeyPatt if any keys are found.
-;
-; Arguments:         R0: the keypad row to select on the demux.
-; Return Value:      None.
-;
-; Local Variables:   None.
-; Shared Variables:  None.
-; Global Variables:  None.
-;
-; Input:             None.
-; Output:            None.
-;
-; Error Handling:    None.
-;
-; Algorithms:        None.
-; Data Structures:   None.
-;
-; Registers Changed: R0, R1
-; Stack Depth:       0 words
-;
-;
-; Revision History:  11/27/25   Steven Lei       initial revision
-; Arguments:        R0
-; Returns:			R7
-WriteDemuxPins:
-        SUB     R0, R0, #1					;decrement index since 1-indexed
-        AND     R6, R0, #BIT_0_MASK         ;get the 0th bit of the row index
-        LSL     R6, R6, #DEMUX_PIN_A            ;and place it at demux pin A
-        AND     R7, R0, #BIT_1_MASK         ;get the 1st bit of the row index
-        LSL     R7, R7, #(DEMUX_PIN_B-1)        ;and place it at demux pin B
-        ORR     R8, R7, R6                  ;combine the bit patterns
-
-        MOV32   R5, GPIO_BASE_ADDR          ;get the GPIO base for writing
-        STR     R8, [R5, #GPIO_DOUT31_0_OFF]    ;and output to the demux pins
-DoneWriteDemuxPins:
-        BX      LR                              ;done so return
-
-;ReadKeypadCol
-;Args: R0 - col to read, R1 - shift amount
-;Return: R6
-
-ReadKeypadCol:
-        MOV32   R5, GPIO_BASE_ADDR			;get the GPIO base for reading
-	    LDR     R6, [R5, #GPIO_DIN31_0_OFF] ;read the col bit, is active low
-        MOV     R7, #0						;hold the correct bit pattern
-
-        LSR     R6, R6, R0                  ;move col bit to 0 bit
-        MVN     R6, R6                      ;negate it for active high
-        AND     R6, R6, #BIT_0_MASK         ;mask the bit, only want 0 bit
-        LSL     R6, R6, R1                  ;and shift it to the right spot
-
-DoneReadKeypadCol:
-        BX      LR
-
-
-
-
-; UpdateKeyPatt
-
-UpdateKeyPatt:
-        PUSH    {LR}					   ;save return address
-        MOVA    R1, currKeyPatt			   ;get the curr key patt from memory
-        LDR     R0, [R1]
-        MOVA    R1, prevKeyPatt            ;get the prev key patt from memory
-        STR     R0, [R1]                   ;and update to the current key patt
-
-        MOV     R2, #1                     ;hold row index for looping through
-        MOV     R3, #0                     ;hold the final key pattern
-		MOV 	R4, #0					   ;hold the shift amount for key pattern
-
-UpdateKeyPattLoop:
-
-        MOV     R0, R2					   ;argument row index must be in R0
-        BL      WriteDemuxPins			   ;write the row index to demux pins
-
-ReadKeypadCols:								;read columns at each row
-        
-        MOV     R0, #KEYPAD_COL_1			;argument col index is in R0
-		MOV		R1, R4						;argument shift amt index is R1
-        BL      ReadKeypadCol				;read the col bit of the row
-        ORR     R3, R3, R6					;return is R6, accumulate in R3
-
-		ADD		R4, R4, #1					;increment shift amount
-        MOV     R0, #KEYPAD_COL_2			;argument col index is in R0
-		MOV		R1, R4						;argument shift amt index is R1
-        BL      ReadKeypadCol				;read the col bit of the row
-        ORR     R3, R3, R6					;return is R6, accumulate in R3
-
-		ADD		R4, R4, #1					;increment shift amount
-        MOV     R0, #KEYPAD_COL_3			;argument col index is in R0
-		MOV		R1, R4						;argument shift amt index is R1
-        BL      ReadKeypadCol				;read the col bit of the row
-        ORR     R3, R3, R6					;return is R6, accumulate in R3
-
-		ADD		R4, R4, #1					;increment shift amount
-
-CheckDoneUpdateKeyPattLoop:
-        ADD     R2, R2, #1					;advance to next row to read cols
-        CMP     R2, #(KEYPAD_NUM_ROWS + 1)	;check if looped through rows
-        BNE     UpdateKeyPattLoop			;	not done looping, so continue
-        ;BEQ    DoneUpdateKeyPatt			;looped all rows, so done
-
-DoneUpdateKeyPatt:
-        POP     {LR}						;restore the return address
-        MOVA    R1, currKeyPatt           	;get the curr key patt from memory
-        STR     R3, [R1]					;	and store the new key patt
-        BX      LR                          ;done so return
-
-; DebounceKeyPatt
-; Description:       Debounces the key pattern pressed 
-;                    and previous key pattern variables.
-;                    
-; Operation:         The debounceCounter is reset to the debounce time and the
-;                    prevKeyPattern is reset to no key pressed.
-;
-; Arguments:         None.
-; Return Value:      None.
-;
-; Local Variables:   None.
-; Shared Variables:  None.
-; Global Variables:  None.
-;
-; Input:             None.
-; Output:            None.
-;
-; Error Handling:    None.
-;
-; Algorithms:        None.
-; Data Structures:   None.
-;
-; Registers Changed: R0, R1
-; Stack Depth:       0 words
-;
-;
-; Revision History:  11/27/25   Steven Lei       initial revision
-
-DebounceKeyPatt:
-        PUSH    {LR}
-DebounceKeyPattLoop:                    ;loop until counter is 0 or patt changes
-
-        MOVA    R2, prevKeyPatt             ;get the previous patt from memory
-        LDR     R1, [R2]
-        MOVA    R2, currKeyPatt
-        LDR     R0, [R2]
-
-        CMP     R1, R0                      ;compare prev to current key patt
-        BNE     ResetDebounceCounter        ;patts different, so reset counter
-
-StartDebounceKeyPatt:                   ;prev and curr patts same, so debounce
-        BL      UpdateKeyPatt               ;get the new switch pattern
-
-        MOVA    R2, debounceCounter         ;get debounce counter from memory
-        LDR     R1, [R2]                    
-        SUBS    R1, R1, #1                  ;decrement counter, check if 0
-        BEQ     ProcessDebouncedKeyPatt		;	counter is 0, so key debounced
-        STR     R1, [R2]                    ;counter not 0, write to memory
-        BNE     DoneDebounceKeyPatt         ;	and keep looping
-
-ProcessDebouncedKeyPatt:                ;counter is 0, so process the key patt
-        MOVA    R2, debounceCounter         ;get counter from memory
-        MOV32   R1, (REPEAT_RATE_MS)        ;setup counter for auto repeat
-        STR     R1, [R2]                    ;write new counter value to memory
-        BL      GetKeyValueFromPatt         ;get the key value pressed
-        BL      EnqueueEvent                ;   and enqueue the key event
-		B		DoneDebounceKeyPatt			;done
-
-ResetDebounceCounter: 					;done debouncing, so always reset counter
-        MOVA    R1, debounceCounter         ;get the counter from memory
-        MOV32   R0, (DEBOUNCE_TIME_MS)    	;reset to debounce time
-        STR     R0, [R1]                    ;write to memory
-
-DoneDebounceKeyPatt:
-        POP     {LR}						;restore return address
-        BX      LR                          ;done so return
-
-
-; InitEventQueue
-; Description:       Initializes the event queue. Note that this is a "dummy"
-;                    event queue implemented as a buffer, so all it does is 
-;                    reset the index to the buffer. By default, the queue
-;                    values are initializaed to 0 when declare with
-;                    the ".space" directive.
-;           
-; Operation:         The queueIndex variable is reset to 0, which is the
-;                    start of the event queue.
-;
-; Arguments:         None.
-; Return Value:      None.
-;
-; Local Variables:   None.
-; Shared Variables:  queueIndex  (W): the key index is reset to 0
-; Global Variables:  None.
-;
-; Input:             None.
-; Output:            None.
-;
-; Error Handling:    None.
-;
-; Algorithms:        None.
-; Data Structures:   None.
-;
-; Registers Changed: R0, R1
-; Stack Depth:       0 words
-;
-; Revision History:  11/27/25   Steven Lei       initial revision
-
-InitEventQueue:
-        MOVA    R1, queueIndex              ;get the index from memory
-        MOV     R0, #0                      
-        STR     R0, [R1]                    ;and reset it (0 indexed)
-
-        BX      LR                          ;done so return
-
-
-; EnqueueEvent
-; Description:       Adds an event (argument) into the event queue. Note that
-;                    this event queue is implemented as a buffer, so all it 
-;                    does is write the event to the buffer at the current
-;                    queue index. It then increments the queue index.
-;                    NOTE: If the queue is full, the queue will OVERWRITE 
-;                    the next value by wrapping the queue index back to start.
-;           
-; Operation:         The event is stored in the queue and the queue index
-;                    is then incremented. The queue index is then reset to 0
-;                    if it exceeds the queue size (wrap around).
-;
-; Arguments:         R0: the event to add to the queue
-; Return Value:      None.
-;
-; Local Variables:   None.
-; Shared Variables:  queueIndex (R, W): the queue index is read to determine
-;                                       where to write to the queue and updated
-;                                       to point to the next writeable entry
-;                    eventQueue (W):    the event is written to the queue
-; Global Variables:  None.
-;
-; Input:             None.
-; Output:            None.
-;
-; Error Handling:    None.
-;
-; Algorithms:        None.
-; Data Structures:   None.
-;
-; Registers Changed: R0, R1, R2, R3, R4
-; Stack Depth:       0 words
-;
-;
-; Revision History:  11/27/25   Steven Lei       initial revision
-
-EnqueueEvent:
-
-AddEventToQueue:                        ;write the event (R0) to the queue 
-        MOVA    R3, queueIndex              ;get the queue index from memory 
-        LDR     R2, [R3]                    
-
-        MOV     R4, #BYTES_PER_WORD         ;scale queue index to create offset
-        MUL     R4, R2, R4                  ;R4 is now byte offset to the queue 
-
-        MOVA    R1, eventQueue              ;get base addr for event queue 
-        STR     R0, [R1, R4]                ;and store event at base + offset
-
-UpdateQueueIndexValue:                  ;update the queue index with wraparound
-        ADD     R2, R2, #1                  ;increment queue index
-        CMP     R2, #QUEUE_SIZE             ;check if index is past end of queue
-        BNE     DoneEnqueueEvent            ;   within bounds, so done
-        MOV     R2, #0                      ;past end, so wrap back to start
-
-DoneEnqueueEvent:                       
-        STR     R2, [R3]                    ;write new queue index to memory
-        BX      LR                          ;done so return
-
-
-
-; InitPower
-; Description:       Turn on the power to the peripherals. 
-;
-; Operation:         Setup PRCM registers to turn on power to the peripherals.
-;
-; Arguments:         None.
-; Return Value:      None.
-;
-; Local Variables:   None.
-; Shared Variables:  None.
-; Global Variables:  None.
-;
-; Input:             None.
-; Output:            None.
-;
-; Error Handling:    None.
-;
-; Algorithms:        None.
-; Data Structures:   None.
-;
-; Registers Changed: flags, R0, R1
-; Stack Depth:       0 words
-;
-; References:        CC26xR manual: Active mode: sec 7.6.2 (pg 519) 
-;
-; Revision History:  02/17/21   Glen George      initial revision
-;                    10/30/25   Steven Lei       retrieved from Glen's website
-
-InitPower:
-        MOV32   R1, PRCM_BASE_ADDR              ;get base for power registers
-        STREG   PD_PERIPH_EN, R1, PDCTL0_OFF    ;turn on peripheral power
-
-WaitPowerOn:                                    ;wait for power on
-        LDR     R0, [R1, #PDSTAT0_OFF]          ;get power status
-        ANDS    R0, #PD_PERIPH_STAT             ;check if power is on
-        BEQ     WaitPowerOn                     ;if not, keep checking
-        ;BNE    DonePeriphPower                 ;otherwise done
-
-DonePeriphPower:                                ;done turning on peripherals
-        BX      LR
-
-
-; InitClocks
-;
-; Description:       Turn on the clock to the peripherals. 
-;
-; Operation:         Setup PRCM registers to turn on clock to the peripherals.
-;
-; Arguments:         None.
-; Return Value:      None.
-;
-; Local Variables:   None.
-; Shared Variables:  None.
-; Global Variables:  None.
-;
-; Input:             None.
-; Output:            None.
-;
-; Error Handling:    None.
-;
-; Algorithms:        None.
-; Data Structures:   None.
-;
-; Registers Changed: flags, R0, R1
-; Stack Depth:       0 words
-;
-; References:        CC26xR manual: Clock gating, sec 7.5.2.1, pg 516 - 517
-;   
-; Revision History:  02/17/21   Glen George      initial revision
-;                    10/30/25   Steven Lei       retrieved from Glen's website
-
-InitClocks:
-
-
-        MOV32   R1, PRCM_BASE_ADDR              ;get base for power registers
-
-        STREG   GPIOCLK_EN, R1, GPIOCLKGR_OFF   ;turn on GPIO clocks
-        STREG   GPT0CLK_EN, R1, GPTCLKGR_OFF    ;turn on Timer 0 clocks
-        STREG   GPTCLKDIV_1, R1, GPTCLKDIV_OFF  ;timers get system clock
-
-        STREG   CLKLOADCTL_LD, R1, CLKLOADCTL_OFF  ;load clock settings
-
-WaitClocksLoaded:                               ;wait for clocks to be loaded
-        LDR     R0, [R1, #CLKLOADCTL_OFF]       ;get clock status
-        ANDS    R0, #CLKLOADCTL_STAT            ;check if clocks are on
-        BEQ     WaitClocksLoaded                ;if not, keep checking
-        ;BNE    DoneClockSetup                  ;otherwise done
-
-
-DoneClockSetup:                                 ;done setting up clock
-        BX      LR
-
-
-; InitGPT0
-;
-; Description:       This function initializes GPT0.  It sets up the timer to
-;                    generate interrupts every KEYPAD_INT_MS milliseconds.
-;
-; Operation:         The appropriate values are written to the timer control
-;                    registers such that the Timer0A is configured to 32 bit,
-;                    periodic mode with interrupts enabled. 
-;
-; Arguments:         None.
-; Return Value:      None.
-;
-; Local Variables:   None.
-; Shared Variables:  None.
-; Global Variables:  None.
-;
-; Input:             None.
-; Output:            None.
-;
-; Error Handling:    None.
-;
-; Algorithms:        None.
-; Data Structures:   None.
-;
-; Registers Changed: R0, R1
-; Stack Depth:       0 words
-;
-; References:        CC26xR manual: Periodic timer modes, sec 15.4.1 pg 1347
-;
-; Revision History:  02/17/21   Glen George      initial revision
-;                    11/17/25   Steven Lei       retrieved from Glen's website
-;                    11/17/25   Steven Lei       update procedure to reflect
-;                                                steps in manual guide
-InitGPT0:
-
-GPT0AConfig:            ;configure timer 0A as a down counter generating
-                        ;   interrupts every KEYPAD_INT_MS milliseconds
-
-        MOV32   R1, GPT0_BASE_ADDR              ;get GPT0 base address
-        STREG   GPT_CTL_TADIS, R1, GPT_CTL_OFF  ;disable timer A before changes
-        STREG   GPT_CFG_32x1, R1, GPT_CFG_OFF   ;setup one 32-bit timer
-
-        STREG   GPT_IRQ_TATO, R1, GPT_IMR_OFF   ;enable timeout interrupt
-        STREG   GPT_TxMR_PERIODIC | GPT_TxCDIR_DOWN, R1, GPT_TAMR_OFF ;set timer mode to periodic
-                                                ;set timer for 1 ms interrupt
-        STREG   (KEYPAD_INT_MS * CLK_PER_MS), R1, GPT_TAILR_OFF
-        STREG   GPT_TxPR_PRSCL_1, R1, GPT_TAPR_OFF ;set prescale to 1
-        STREG   GPT_CTL_TAEN, R1, GPT_CTL_OFF   ;enable timer A with changes
-
-
-        BX      LR                              ;done so return
-
-; InitGPIO
-;
-; Description:       Initialize the I/O pins for the keypad. The keypad
-;                    rows are written as outputs and the keypad rows are read
-;                    as inputs.
-;
-; References:        keypad-schematic.pdf
-;                    
-;                    
-; Operation:         Setup pins 20, 19, and 18 as inputs to read keypad cols.
-;                    Setup pins 4 and 20 as outputs to write keypad rows.
-;
-; Arguments:         None.
-; Return Value:      None.
-;
-; Local Variables:   None.
-; Shared Variables:  None.
-; Global Variables:  None.
-;
-; Input:             None.
-; Output:            None.
-;
-; Error Handling:    None.
-;
-; Algorithms:        None.
-; Data Structures:   None.
-;
-; Registers Changed: R0, R1
-; Stack Depth:       0 words
-;
-; Revision History:  02/17/21   Glen George      initial revision
-;                    10/28/25   Steven Lei       retrieved from website
-;                    11/17/25   Steven Lei       update pinout for HW2 (keypad)
-
-InitGPIO:
-
-        MOV32   R1, IOC_BASE_ADDR       ;get base addr for I/O control registers
-        MOV32   R0, IOCFG_GEN_DIN       ;setup for general inputs
-        STR     R0, [R1, #IOCFG20]      ;write config for keypad column pin 0 
-        STR     R0, [R1, #IOCFG19]      ;                               pin 1
-        STR     R0, [R1, #IOCFG18]      ;                               pin 2
-
-                                        ;R1 still has base addr for I/O control registers
-        MOV32   R0, IOCFG_GEN_DOUT_4MA  ;setup for general 4mA outputs
-        STR     R0, [R1, #IOCFG4]       ;write config for keypad demux pin a
-        STR     R0, [R1, #IOCFG21]      ;                              pin b  
-		STR		R0, [R1, #IOCFG5]		;				   interrupt test pin
-
-        MOV32   R1, GPIO_BASE_ADDR      ;get base addr for GPIO pins
-                                        ;and write enable for output pins
-        STREG   ((1 << DEMUX_PIN_A) | (1 << DEMUX_PIN_B) | (1 << INT_TEST_PIN)), R1, GPIO_DOE31_0_OFF
-
-
-        BX      LR                      ;done so return
-
 
 
 

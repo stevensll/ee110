@@ -16,13 +16,9 @@
 ;     2/14/22  Glen George         initial revision
 ;    11/05/23  Glen George         updated style
 ;    10/28/25  Steven Lei          forked from Glen, update name for HW1
-;    11/28/25  Steven Lei          add include guards
 
 ; local include files
 ;   none
-
-;  .ifndef GENERAL_MACROS_INC
-;  .define GENERAL_MACROS_INC
 
 ; MOV32
 ;
@@ -50,7 +46,6 @@ MOV32   .macro  reg, value
         .endm
 
 
-
 ; MOVA
 ;
 ; Description:       This macro generates code to move a 32-bit address into
@@ -75,6 +70,7 @@ MOVA    .macro  reg, addr
         MOVT    reg, addr                       ;load the high 16-bits
 
         .endm
+
 
 ; STREG
 ;
@@ -105,5 +101,3 @@ STREG   .macro  value, base, off
         STR     R0, [base, #off]                ;and store the 32-bit value
 
         .endm
-
-;  .endif GENERAL_MACROS_INC

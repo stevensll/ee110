@@ -18,12 +18,11 @@
 ;    10/30/25  Steven Lei       add references to manual
 ;    11/15/25  Steven Lei       update manual reference page numbers
 ;    11/17/25  Steven Lei       add references for SCS
+
 ; base addresses
 ;   table 3.1, pg 310
 PRCM_BASE_ADDR     .equ    0x40082000   ;power/reset/clock module registers
 SCS_BASE_ADDR      .equ    0xE000E000   ;core system control space registers
-
-
 
 ; register offsets
 
