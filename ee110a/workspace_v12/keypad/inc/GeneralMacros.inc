@@ -101,3 +101,31 @@ STREG   .macro  value, base, off
         STR     R0, [base, #off]                ;and store the 32-bit value
 
         .endm
+
+; GETnBIT
+;
+; Description:       This macro generates code to get the nth bit of a value
+;                    in a register to the 0th bit and places the result into 
+;                    the same register.
+;                    All other bits are clear (so result is either 0x01 or 0x00)
+;
+; Operation:         Register reg has contains the value and is then shifted by
+;                    n bits to get the nth bit in the 0th bit and then all 
+;                    other bits are masked to 0. 
+;
+; Arguments:         reg   - the register containing the value to look at
+;                    n     - the bit number to get 
+;
+; Returns:           reg   - the register now contains the result
+;  
+; Registers Changed: reg (argument)
+; Stack Depth:       0 words
+;
+; Author:            Steven Lei
+; Last Modified:     12/8/2025
+
+GETnBIT .macro  reg, n 
+        LSR     reg, reg, #n                     ;shift nth bit to the 0th bit
+        AND     reg, reg, #1                     ;mask off all other bits
+        .endm
+

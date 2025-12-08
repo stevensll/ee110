@@ -1,24 +1,65 @@
-; utilities
- .include  "inc/GeneralMacros.inc"
- .include  "inc/GeneralConstants.inc"
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;                                                                            ;
+;                                 Init.asm                                   ;
+;                                 EE110a HW2                                 ;
+;                                                                            ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; CC26x2 hardware
- .include  "inc/CPUreg.inc"
- .include  "inc/GPIOreg.inc"
- .include  "inc/IOCreg.inc"
- .include  "inc/GPTreg.inc"
+; This file contains initalization functions for the CC26xR1 launchpad. It sets
+; up the PRCM, clock, timer, and GPIO modules for use. 
+;
+; Public functions:
+;   InitPower - turn on power to the peripherals
+;   InitClock - turn on clocks to the peripherals
+;   InitGPIO  - configure and enable I/Os for selected pins 
+;   InitGPT0  - setup timer 0 based on input configuration
+;
+; References: CC13x2, CC26x2 SimpleLink™ Wireless MCU Technical Reference Manual
+;             https://www.ti.com/lit/ug/swcu185g/swcu185g.pdf?ts=1761608306803
 
-; This program specific
- .include  "inc/Keypad.inc"
- .include  "inc/KeypadDemo.inc"
+; Revision History:
+;    11/27/25  Steven Lei       initial revision
+;    12/8/25   Steven Lei       convert InitGPIO, InitGPT0 to table driven code
+
+
+; Local includes
+    ; Utilities
+    .include  "inc/GeneralMacros.inc"
+    .include  "inc/GeneralConstants.inc"
+    ; CC26x2 hardware
+    .include  "inc/CPUreg.inc"
+    .include  "inc/GPIOreg.inc"
+    .include  "inc/IOCreg.inc"
+    .include  "inc/GPTreg.inc"
+    ; This program specific
+    .include  "inc/Keypad.inc"
+    .include  "inc/KeypadDemo.inc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+    .data
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+         ; the interrupt vector table in SRAM
+        .align  512
+VecTable:       .space  VEC_TABLE_SIZE * BYTES_PER_WORD
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
     .text
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
+; Define public functions
     .def InitPower
     .def InitClocks
     .def InitGPIO
     .def InitGPT0
-    
+    .def MoveVecTable
+
+
 ; InitPower
 ; Description:       Turn on the power to the peripherals. 
 ;
@@ -112,7 +153,6 @@ DoneClockSetup:                                 ;done setting up clock
         BX      LR
 
 
-
 ; InitGPT0
 ;
 ; Description:       This function initializes GPT0.  It sets up the timer to
@@ -167,20 +207,28 @@ GPT0AConfig:            ;configure timer 0A as a down counter generating
 
 ; InitGPIO
 ;
-; Description:       Initialize the I/O pins for the keypad. The keypad
-;                    rows are written as outputs and the keypad rows are read
-;                    as inputs.
-;
-; References:        keypad-schematic.pdf
-;                    
-;                    
-; Operation:         Setup pins 20, 19, and 18 as inputs to read keypad cols.
-;                    Setup pins 4 and 20 as outputs to write keypad rows.
-;
-; Arguments:         None.
+; Description:       Generic function to initialize I/O pins based on the arg
+;                    IOTable. The table is expected to be formatted like so:
+;                       .word   PIN_VALUE, IOCFG_CONFIG
+;                    where PIN_VALUE is the pin to initialize with configuration
+;                    IOCFG_CONFIG.
+;                   
+; Operation:         Starts at IOTableStart, loops through, and writes the pin 
+;                    configuration to the corresponding IOC register (derived 
+;                    from pin value). If the pin is selected as output, also 
+;                    writes output enable for that pin. Stops at IOTableEnd.
+;                           
+; Arguments:         R0: IOTableStart - the start of the IOTable 
+;                    R1: IOTableEnd   - the end of the IOTable
 ; Return Value:      None.
 ;
-; Local Variables:   None.
+; Local Variables:   R0 (arg) - start of table / curr table entry
+;                    R1 (arg) - end of the table
+;                    R2       - IOCFG base address
+;                    R3       - accumulator for bits to output enable
+;                    R4       - the pin value from the table
+;                    R5       - the corresponding IOCFG register from pin value
+;                    R6       - the I/O configuration for this pin
 ; Shared Variables:  None.
 ; Global Variables:  None.
 ;
@@ -192,32 +240,105 @@ GPT0AConfig:            ;configure timer 0A as a down counter generating
 ; Algorithms:        None.
 ; Data Structures:   None.
 ;
-; Registers Changed: R0, R1
+; Registers Changed: flags, R0 - R6
 ; Stack Depth:       0 words
 ;
+; References:        CC26xR manual, sec 13.6 - "GPIO"
+; 
 ; Revision History:  02/17/21   Glen George      initial revision
 ;                    10/28/25   Steven Lei       retrieved from website
-;                    11/17/25   Steven Lei       update pinout for HW2 (keypad)
+;                    12/8/25    Steven Lei       convert to table driven code
 
 InitGPIO:
+        MOV32   R2, IOC_BASE_ADDR         ;get the IOC base address
+        MOV     R3, #0                    ;clear to accumulate output enable bits
+    
+InitGPIOLoop:                           ;loop through to configure each pin
+        LDR     R4, [R0], #BYTES_PER_WORD ;get the pin value from the table
+        LSL     R5, R4, #PIN_TO_IOCFG_SHIFT ;get the IOCFG register from pin value
+        LDR     R6, [R0], #BYTES_PER_WORD ;get the configuration to write
+        STR     R6, [R2, R5]              ;write config to the matching IOCFG
 
-        MOV32   R1, IOC_BASE_ADDR       ;get base addr for I/O control registers
-        MOV32   R0, IOCFG_GEN_DIN       ;setup for general inputs
-        STR     R0, [R1, #IOCFG20]      ;write config for keypad column pin 0 
-        STR     R0, [R1, #IOCFG19]      ;                               pin 1
-        STR     R0, [R1, #IOCFG18]      ;                               pin 2
+        GETnBIT R6, IOCFG_OUTPUT_BIT      ;get the output bit (active low)
+        EOR     R6, R6, #0x01             ;invert the bit (now active high)
+        LSL     R6, R6, R4
+        ORR     R3, R3, R6                ;enable the output for this pin
+         
+CheckEndGPIOTable:                    ;check if loop has hit end of table
+        CMP     R1, R0                    ;end of table is at R1
+        BNE     InitGPIOLoop              ;   not at end, so keep going
+        ;BEQ    DoneInitGPIO              ;at end, so done
 
-                                        ;R1 still has base addr for I/O control registers
-        MOV32   R0, IOCFG_GEN_DOUT_4MA  ;setup for general 4mA outputs
-        STR     R0, [R1, #IOCFG4]       ;write config for keypad demux pin a
-        STR     R0, [R1, #IOCFG21]      ;                              pin b  
-		STR		R0, [R1, #IOCFG5]		;				   interrupt test pin
-
-        MOV32   R1, GPIO_BASE_ADDR      ;get base addr for GPIO pins
-                                        ;and write enable for output pins
-        STREG   ((1 << DEMUX_PIN_A) | (1 << DEMUX_PIN_B) | (1 << INT_TEST_PIN)), R1, GPIO_DOE31_0_OFF
-
-
-        BX      LR                      ;done so return
+DoneInitGPIO:
+        MOV32   R2, GPIO_BASE_ADDR          ;get base addr for GPIO pins
+        STR     R3, [R2, #GPIO_DOE31_0_OFF] ;enable outputs to all output pins
+        BX      LR                          ;done so return 
 
 
+; MoveVecTable
+;
+;
+; Description:       This function moves the interrupt vector table from its
+;                    current location to SRAM at the location VecTable.
+;
+; Operation:         The function reads the current location of the vector
+;                    table from the Vector Table Offset Register and copies
+;                    the words from that location to VecTable.  It then
+;                    updates the Vector Table Offset Register with the new
+;                    address of the vector table (VecTable).
+;
+; Arguments:         None.
+; Return Values:     None.
+;
+; Local Variables:   None.
+; Shared Variables:  None.
+; Global Variables:  None.
+;
+; Input:             VTOR.
+; Output:            VTOR.
+;
+; Error Handling:    None.
+;
+; Registers Changed: flags, R0, R1, R2, R3
+; Stack Depth:       1 word
+;
+; Algorithms:        None.
+; Data Structures:   None.
+;
+; Revision History:  11/03/21   Glen George      initial revision
+;                    11/25/25   Steven Lei       retrieved from website
+
+MoveVecTable:
+
+        PUSH    {R4}                    ;store necessary changed registers
+        ;B      MoveVecTableInit        ;start doing the copy
+
+
+MoveVecTableInit:                       ;setup to move the vector table
+        MOV32   R1, SCS_BASE_ADDR       ;get base for CPU SCS registers
+        LDR     R0, [R1, #VTOR_OFF]     ;get current vector table address
+
+        MOVA    R2, VecTable            ;load address of new location
+        MOV     R3, #VEC_TABLE_SIZE     ;get the number of words to copy
+        ;B      MoveVecCopyLoop         ;now loop copying the table
+
+
+MoveVecCopyLoop:                        ;loop copying the vector table
+        LDR     R4, [R0], #BYTES_PER_WORD   ;get value from original table
+        STR     R4, [R2], #BYTES_PER_WORD   ;copy it to new table
+
+        SUBS    R3, #1                  ;update copy count
+
+        BNE     MoveVecCopyLoop         ;if not done, keep copying
+        ;B      MoveVecCopyDone         ;otherwise done copying
+
+
+MoveVecCopyDone:                        ;done copying data, change VTOR
+        MOVA    R2, VecTable            ;load address of new vector table
+        STR     R2, [R1, #VTOR_OFF]     ;and store it in VTOR
+        ;B      MoveVecTableDone        ;and all done
+
+
+MoveVecTableDone:                       ;done moving the vector table
+        POP     {R4}                    ;restore registers and return
+        BX      LR

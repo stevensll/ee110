@@ -30,3 +30,7 @@ ALL_ZEROES          .equ    0           ;all bits clear
 BIT_0_MASK          .equ    0x01        ;all bits clear except bit 0
 BIT_1_MASK          .equ    0x02        ;all bits clear except bit 1
  
+HANDLER_STACK_SIZE .equ    128          ;interrupt handler stack size
+PROCESS_STACK_SIZE .equ    256          ;main loop stack size
+TOTAL_STACK_SIZE   .equ    PROCESS_STACK_SIZE + HANDLER_STACK_SIZE
+VEC_TABLE_SIZE     .equ    54           ;number of interrupts in table

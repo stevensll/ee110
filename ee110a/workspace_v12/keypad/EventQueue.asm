@@ -12,11 +12,12 @@
 ; overwrite itself (wrap around) with event values.
 ;
 ; The event queue expects events to be a 32 bit value of the form:
+;
 ;           31 ................. 16 15 .....................0 
 ;           |----- EVENT ID -----|  |----- EVENT VALUE -----| 
+;
 ; Where the event ID denotes the type of event and the event value is the 
-; value that the event generated.
-; The event IDs are defined in the EventQueue.inc file.
+; value that the event generated.The event IDs are defined in EventQueue.inc.
 
 ; Public functions:
 ;   InitEventQueue - initializes the event queue
@@ -70,7 +71,7 @@ queueIndex:             .space          BYTES_PER_WORD
 ; Return Value:      None.
 ;
 ; Local Variables:   None.
-; Shared Variables:  queueIndex  (W): the key index is reset to 0
+; Shared Variables:  queueIndex  (W): the queue index is reset to 0
 ; Global Variables:  None.
 ;
 ; Input:             None.
@@ -115,7 +116,7 @@ InitEventQueue:
 ; Shared Variables:  queueIndex (R, W): the queue index is read to determine
 ;                                       where to write to the queue and updated
 ;                                       to point to the next queue entry
-;                    eventQueue (W):    the event is written to the queue
+;                    eventQueue (W):    the event is added to the queue
 ; Global Variables:  None.
 ;
 ; Input:             None.

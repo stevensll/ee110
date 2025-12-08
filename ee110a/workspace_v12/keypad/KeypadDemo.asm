@@ -1,21 +1,37 @@
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;                                                                            ;
+;                               KeypadDemo.asm                               ;
+;                                 EE110a HW2                                 ;
+;                                                                            ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; This file demonstrates the keypad for HW2 by handling keypresses and adding
+; them to the event queue. The event queue is implemented as a buffer in memory,
+; so the keypresses values are displayed in value. The keypresses 
+;
+; Public functions:
+;   InitPower - turn on power to the peripherals
+;   InitClock - turn on clocks to the peripherals
+;   InitGPIO  - enable output and inputs for configured pins 
+;   InitGPT0  - setup timer 0 based on input configuration
+;
+; Revision History:
+;    11/30/25  Steven Lei       initial revision
+
+; Local include
 ; utilities
  .include  "inc/GeneralMacros.inc"
  .include  "inc/GeneralConstants.inc"
-
 ; CC26x2 hardware
  .include  "inc/CPUreg.inc"
  .include  "inc/GPIOreg.inc"
  .include  "inc/IOCreg.inc"
  .include  "inc/GPTreg.inc"
-
 ; This program specific
  .include  "inc/Keypad.inc"
  .include  "inc/KeypadDemo.inc"
 
-
- 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
         .data
@@ -25,9 +41,6 @@
         ; the stack (must be double-word aligned)
         .align  8
 TopOfStack:     .bes    TOTAL_STACK_SIZE
-         ; the interrupt vector table in SRAM
-        .align  512
-VecTable:       .space  VEC_TABLE_SIZE * BYTES_PER_WORD
 
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -35,21 +48,23 @@ VecTable:       .space  VEC_TABLE_SIZE * BYTES_PER_WORD
         .text
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+        
+        ;Import public functions from other files
         .ref InitPower
         .ref InitClocks
         .ref InitGPT0
-        .ref InitGPIO
         .ref InitEventQueue
         .ref EnqueueEvent
         .ref InitKeypad
         .ref DebounceKeyPatt
         .ref UpdateKeyPatt
+        .ref MoveVecTable
+        
         .global ResetISR
 ResetISR:
 
 Main:
-        MOVA    R0, TopOfStack               ;initialize the stack pointers
+        MOVA    R0, TopOfStack          ;initialize the stack pointers
         MSR     MSP, R0
         SUB     R0, R0, #HANDLER_STACK_SIZE
         MSR     PSP, R0
@@ -58,7 +73,6 @@ Main:
         BL      InitPower               ;turn on power to everything
         BL      InitClocks              ;turn on clocks to everything
         BL      MoveVecTable            ;move the vector table to RAM
-        BL      InitGPIO                ;setup the I/O (only output)
 
         BL      InstallGPT0Handler      ;install the event handler
         BL      InitGPT0                ;initialize the internal timer
@@ -106,14 +120,13 @@ DoneMain:
 ; Revision History:  11/27/25   Steven Lei       initial revision
 
 KeypressHandler:
-        PUSH    {LR} ;save touched registers
-
-
+        PUSH    {LR}                    ;save LR since have function calls
         BL      UpdateKeyPatt           ;update the key pattern (returned in R0)
         CMP     R0, #NO_KEYPATT         ;check if there is some key press
         BEQ     DoneKeypressHandler     ;   dont have any key press, so done
         MOVA    R10, EnqueueEvent       ;setup debounce callback
         BL      DebounceKeyPatt         ;have some key press, so debounce
+
 ResetInt:                               ;reset interrupt bit for GPT0A
         MOV32   R1, GPT0_BASE_ADDR      ;get base address
         STREG   GPT_IRQ_TATO, R1, GPT_ICLR_OFF ;clear timer A timeout interrupt
@@ -121,7 +134,7 @@ ResetInt:                               ;reset interrupt bit for GPT0A
 		NOP
 
 DoneKeypressHandler:
-        POP     {LR} ;restore registers
+        POP     {LR}                    ;restore LR
         BX      LR                      ;done so return
 
 
@@ -165,76 +178,6 @@ InstallGPT0Handler:
 
 
         BX      LR                      ;all done, return
-
-
-
-; MoveVecTable
-;
-;
-; Description:       This function moves the interrupt vector table from its
-;                    current location to SRAM at the location VecTable.
-;
-; Operation:         The function reads the current location of the vector
-;                    table from the Vector Table Offset Register and copies
-;                    the words from that location to VecTable.  It then
-;                    updates the Vector Table Offset Register with the new
-;                    address of the vector table (VecTable).
-;
-; Arguments:         None.
-; Return Values:     None.
-;
-; Local Variables:   None.
-; Shared Variables:  None.
-; Global Variables:  None.
-;
-; Input:             VTOR.
-; Output:            VTOR.
-;
-; Error Handling:    None.
-;
-; Registers Changed: flags, R0, R1, R2, R3
-; Stack Depth:       1 word
-;
-; Algorithms:        None.
-; Data Structures:   None.
-;
-; Revision History:  11/03/21   Glen George      initial revision
-;                    11/25/25   Steven Lei       retrieved from website
-
-MoveVecTable:
-
-        PUSH    {R4}                    ;store necessary changed registers
-        ;B      MoveVecTableInit        ;start doing the copy
-
-
-MoveVecTableInit:                       ;setup to move the vector table
-        MOV32   R1, SCS_BASE_ADDR       ;get base for CPU SCS registers
-        LDR     R0, [R1, #VTOR_OFF]     ;get current vector table address
-
-        MOVA    R2, VecTable            ;load address of new location
-        MOV     R3, #VEC_TABLE_SIZE     ;get the number of words to copy
-        ;B      MoveVecCopyLoop         ;now loop copying the table
-
-
-MoveVecCopyLoop:                        ;loop copying the vector table
-        LDR     R4, [R0], #BYTES_PER_WORD   ;get value from original table
-        STR     R4, [R2], #BYTES_PER_WORD   ;copy it to new table
-
-        SUBS    R3, #1                  ;update copy count
-
-        BNE     MoveVecCopyLoop         ;if not done, keep copying
-        ;B      MoveVecCopyDone         ;otherwise done copying
-
-
-MoveVecCopyDone:                        ;done copying data, change VTOR
-        MOVA    R2, VecTable            ;load address of new vector table
-        STR     R2, [R1, #VTOR_OFF]     ;and store it in VTOR
-        ;B      MoveVecTableDone        ;and all done
-
-
-MoveVecTableDone:                       ;done moving the vector table
-        POP     {R4}                    ;restore registers and return
-        BX      LR
 
 
         .end

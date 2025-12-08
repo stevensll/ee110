@@ -19,6 +19,7 @@
 ;    11/15/25  Steven Lei       add references to manual
 ;    11/17/25  Steven Lei       add constant definitions for TxMR, TxPR
 ;    11/27/25  Steven Lei       add definitions for timer count direction
+;    11/27/25  Stevne Lei       add interrupt and exception numbers
 
 ; base addresses
 ;   table 3.1, pg 310
@@ -154,3 +155,6 @@ GPT_PWM_TO         .equ    0x00000002   ;PWM assertion when timeout
 GPT_CCP_IND        .equ    0x00000000   ;timer A and B PWM independent
 GPT_CCP_AND        .equ    0x00000001   ;timer A PWM output is AND of timer A and B PWM signals
 
+; Interrupt and exception numbers
+GPT0A_EX_NUM       .equ    31           ;exception number for GPT0 Timer A
+GPT0A_IRQ_NUM      .equ    GPT0A_EX_NUM - 16 ;interrupt number for GPT0 Timer A

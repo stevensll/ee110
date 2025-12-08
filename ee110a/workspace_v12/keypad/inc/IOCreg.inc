@@ -16,7 +16,7 @@
 ;     2/16/22  Glen George      initial revision
 ;    11/05/23  Glen George      update style and comments
 ;    10/28/25  Steven Lei       add references to CC2652 Reference manual
-
+;    12/8/25   Steven Lei       add PIN_TO_IOCFG and IOCFG_INPUT_BIT
 
 ; I/O (DIO) pins are configured through the IOCFGn registers in the MCU IOC
 ; IOCFGn registers are memory mapped 
@@ -29,6 +29,7 @@ IOC_BASE_ADDR      .equ    0x40081000   ;I/O Controller registers
 ; IOCFGn register offsets in memory map
 ;   sec 13.10.3, pg 1106
 
+PIN_TO_IOCFG_SHIFT .equ    2            ;Register offest = pin value * 4
 IOCFG0             .equ    0x0000       ;I/O configuration for DIO0
 IOCFG1             .equ    0x0004       ;I/O configuration for DIO1
 IOCFG2             .equ    0x0008       ;I/O configuration for DIO2
@@ -119,7 +120,9 @@ IOCFG_RFC_SCI      .equ    56           ;use pin for RF core SMI command link in
 ;   example for ICOFG0:
 ;   sec 13.10.3.1, pg 1103
 
-IOCFG_GEN_DIN      .equ    0x20006000   ;general purpose data input pin
+IOCFG_INPUT_BIT     .equ    29           ;input bit is at bit 29 (active high)
+IOCFG_OUTPUT_BIT    .equ    29           ;output bit also at bit 29 (active low)
+IOCFG_GEN_DIN       .equ    0x20006000   ;general purpose data input pin
                 ;0------------------------------- reserved
                 ;-0------------------------------ no hysteresis
                 ;--1----------------------------- input

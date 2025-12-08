@@ -1,27 +1,71 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;                                                                            ;
+;                                 Keypad.asm                                 ;
+;                                 EE110a HW2                                 ;
+;                                                                            ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; This file contains initalization functions for the CC26xR1 launchpad. It sets
+; up the PRCM, clock, timer, and GPIO modules for use. 
+;
+; Public functions:
+;   InitPower - turn on power to the peripherals
+;   InitClock - turn on clocks to the peripherals
+;   InitGPIO  - enable output and inputs for configured pins 
+;   InitGPT0  - setup timer 0 based on input configuration
+;
+; Revision History:
+;    11/30/25  Steven Lei       initial revision
+
+; Local includes
 ; utilities
  .include  "inc/GeneralMacros.inc"
  .include  "inc/GeneralConstants.inc"
-
 ; CC26x2 hardware
  .include  "inc/CPUreg.inc"
  .include  "inc/GPIOreg.inc"
  .include  "inc/IOCreg.inc"
  .include  "inc/GPTreg.inc"
-
-; This program specific
+; Program specific
  .include  "inc/Keypad.inc"
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
     .data
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
     .align  4
 debounceCounter:        .space          BYTES_PER_WORD
 prevKeyPatt:            .space          BYTES_PER_WORD
 currKeyPatt:            .space          BYTES_PER_WORD
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
     .text
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    
+    ;Define public functions
     .def InitKeypad
     .def DebounceKeyPatt
     .def UpdateKeyPatt
+    .ref InitGPIO
 
+; KeypadIOTable
+; Description:      This table maps the IO pins used in the keypad to their
+;                   respective IO configuration. This allows for a function
+;                   to initialize the KeypadIO with just the table address.
+;   
+; Revision history: 11/27/25    Steven Lei      initial revision                   
+KeypadIOTable:
+            ;Pin value      Config             
+    .word   DEMUX_PIN_A,    IOCFG_GEN_DOUT_4MA                     
+    .word   DEMUX_PIN_B,    IOCFG_GEN_DOUT_4MA                     
+    .word   KEYPAD_COL_1,   IOCFG_GEN_DIN
+    .word   KEYPAD_COL_2,   IOCFG_GEN_DIN
+    .word   KEYPAD_COL_3,   IOCFG_GEN_DIN
+EndKeypadIOTable:
 
 ; KeyPattTable
 ; Description:      This table maps key pattern presses from the 4x3 keypad
@@ -48,13 +92,14 @@ KeyPattTable:
     .half   0x200,     42                   ;*                  ;*
     .half   0x400,      0                   ;0                  ;0
     .half   0x800,     35                   ;#                  ;#
-    .half	0x07,	  100					;					;1+2+3
-    .half	0x38,	  101					;					;4+5+6
+    .half   0x07,	  100					;					;1+2+3
+    .half   0x38,	  101					;					;4+5+6
     .half   0x49,     200                   ;                   ;
 EndKeyPattTable:
 
+
 ; GetKeyValueFromPatt:
-; Description:       Converts the argument key pattern (1 = key pressed)
+; Description:       Converts the argument key pattern (one hot scheme)
 ;                    to an integer value by looking up the pattern in the 
 ;                    KeyPattTable. If the pattern is not in the table, returns
 ;                    BAD_KEY_VALUE.
@@ -147,6 +192,13 @@ DoneGetKeyValue:
 ; Revision History:  11/27/25   Steven Lei       initial revision
 
 InitKeypad:
+
+        MOVA    R0, KeypadIOTable
+        MOVA    R1, EndKeypadIOTable
+        PUSH    {LR}
+        BL      InitGPIO
+        POP     {LR}
+
         MOVA    R1, debounceCounter         ;get the counter from memory
         MOV32   R0, (DEBOUNCE_TIME_MS)
         STR     R0, [R1]                    ;and reset it to the debounce time
