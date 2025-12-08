@@ -77,26 +77,33 @@ EndKeypadIOTable:
 ;   
 ; Revision history: 11/27/25    Steven Lei      initial revision
 ;                   
-
 KeyPattTable:
-            ;Pattern    ;Return value       ;ASCII Equivalent   ;Key pressed
-    .half   0x01,       1                   ;1                  ;1
-    .half   0x02,       2                   ;2                  ;2
-    .half   0x04,       3                   ;3                  ;3
-    .half   0x08,       4                   ;4                  ;4
-    .half   0x10,       5                   ;5                  ;5
-    .half   0x20,       6                   ;6                  ;6
-    .half   0x40,       7                   ;7                  ;7
-    .half   0x80,       8                   ;8                  ;8
-    .half   0x100,      9                   ;9                  ;9
-    .half   0x200,     42                   ;*                  ;*
-    .half   0x400,      0                   ;0                  ;0
-    .half   0x800,     35                   ;#                  ;#
-    .half   0x07,	  100					;					;1+2+3
-    .half   0x38,	  101					;					;4+5+6
-    .half   0x49,     200                   ;                   ;
+            ;Pattern                ;Return value           ;Key pressed
+    .half   KEYPAD_1_KEY_PATT,      KEYPAD_1_KEY_VALUE      ;1                  
+    .half   KEYPAD_2_KEY_PATT,      KEYPAD_2_KEY_VALUE      ;2                  
+    .half   KEYPAD_3_KEY_PATT,      KEYPAD_3_KEY_VALUE      ;3                  
+    .half   KEYPAD_4_KEY_PATT,      KEYPAD_4_KEY_VALUE      ;4                  
+    .half   KEYPAD_5_KEY_PATT,      KEYPAD_5_KEY_VALUE      ;5                  
+    .half   KEYPAD_6_KEY_PATT,      KEYPAD_6_KEY_VALUE      ;6                  
+    .half   KEYPAD_7_KEY_PATT,      KEYPAD_7_KEY_VALUE      ;7                  
+    .half   KEYPAD_8_KEY_PATT,      KEYPAD_8_KEY_VALUE      ;8                  
+    .half   KEYPAD_9_KEY_PATT,      KEYPAD_9_KEY_VALUE      ;9                  
+    .half   KEYPAD_STAR_KEY_PATT,   KEYPAD_STAR_KEY_VALUE   ;*
+    .half   KEYPAD_0_KEY_PATT,      KEYPAD_0_KEY_VALUE      ;0                  
+    .half   KEYPAD_POUND_KEY_PATT,  KEYPAD_POUND_KEY_VALUE  ;# 
+    .half   KEYPAD_1_2_KEY_PATT,    KEYPAD_1_2_KEY_VALUE    ;1+2
+    .half   KEYPAD_1_3_KEY_PATT,    KEYPAD_1_3_KEY_VALUE    ;1+3
+    .half   KEYPAD_2_3_KEY_PATT,    KEYPAD_2_3_KEY_VALUE    ;2+3
+    .half   KEYPAD_1_2_3_KEY_PATT,  KEYPAD_1_2_3_KEY_VALUE  ;1+2+3
+    .half   KEYPAD_4_5_KEY_PATT,    KEYPAD_4_5_KEY_VALUE    ;4+5
+    .half   KEYPAD_4_6_KEY_PATT,    KEYPAD_4_6_KEY_VALUE    ;4+6
+    .half   KEYPAD_5_6_KEY_PATT,    KEYPAD_5_6_KEY_VALUE    ;5+6
+    .half   KEYPAD_4_5_6_KEY_PATT,  KEYPAD_4_5_6_KEY_VALUE  ;4+5+6
+    .half   KEYPAD_7_8_KEY_PATT,    KEYPAD_7_8_KEY_VALUE    ;7+8
+    .half   KEYPAD_7_9_KEY_PATT,    KEYPAD_7_9_KEY_VALUE    ;7+9
+    .half   KEYPAD_8_9_KEY_PATT,    KEYPAD_8_9_KEY_VALUE    ;8+9
+    .half   KEYPAD_7_8_9_KEY_PATT,  KEYPAD_7_8_9_KEY_VALUE  ;7+8+9
 EndKeyPattTable:
-
 
 ; GetKeyValueFromPatt:
 ; Description:       Converts the argument key pattern (one hot scheme)
