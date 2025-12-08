@@ -186,6 +186,52 @@ DoneClockSetup:                                 ;done setting up clock
 ;                    11/17/25   Steven Lei       retrieved from Glen's website
 ;                    11/17/25   Steven Lei       update procedure to reflect
 ;                                                steps in manual guide
+
+; KeypadTimerTable:
+;     ; Interrupt / configure
+;     .word GPT0_BASE_ADDR    ;Timer to use
+;     .word GPT_CFG_32x1      ;CFG
+;     ;.word GPT_CTL          ;CTL - skipped, since this must always be toggled 
+;     .word GPT_IRQ_TATO      ;IMR
+;     .word                   ;RIS
+;     .word                   ;MIS
+;     .word                   ;ICLR
+;     .word                   ;SYNC
+;     .word                   ;DMAEV
+;     ; Timer control
+;     .word               ;TxPS
+;     .word               ;TxPMR
+;     .word   GPT_TxPR_PRSCL_1                        ;TxPR
+;     .word               ;TxMATCHR
+;     .word               ;
+;     .word   KEYPAD_INT_MS * CLK_PER_MS              ;TxILR
+;     .word   GPT_TxMR_PERIODIC | GPT_TxCDIR_DOWN     ;TxMR
+; EndKeypadTimerTable:
+
+
+; ServoTimerTable:
+; ; sec 15.4.4
+;     ; Interrupt / configure
+;     .word GPT1_BASE_ADDR
+;     .word GPT_PWM_LOAD      ;CFG
+;     ;.word GPT_CTL          ;CTL - skipped, since this must always be toggled 
+;     .word GPT_IRQ_TATO      ;IMR
+;     .word                   ;RIS
+;     .word                   ;MIS
+;     .word                   ;ICLR
+;     .word                   ;SYNC
+;     .word                   ;DMAEV
+;     ; Timer control
+;     .word   Timer           ;timer to select
+;     .word               ;TxPS
+;     .word               ;TxPMR
+;     .word   GPT_TxPR_PRSCL_1                        ;TxPR
+;     .word               ;TxMATCHR
+;     .word               ;
+;     .word   KEYPAD_INT_MS * CLK_PER_MS              ;TxILR
+;     .word   GPT_TxMR_PERIODIC | GPT_TxCDIR_DOWN     ;TxMR
+; EndServoTimerTable:
+
 InitGPT0:
 
 GPT0AConfig:            ;configure timer 0A as a down counter generating

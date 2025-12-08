@@ -20,17 +20,17 @@
 ;    11/30/25  Steven Lei       initial revision
 
 ; Local include
-; utilities
- .include  "inc/GeneralMacros.inc"
- .include  "inc/GeneralConstants.inc"
-; CC26x2 hardware
- .include  "inc/CPUreg.inc"
- .include  "inc/GPIOreg.inc"
- .include  "inc/IOCreg.inc"
- .include  "inc/GPTreg.inc"
-; This program specific
- .include  "inc/Keypad.inc"
- .include  "inc/KeypadDemo.inc"
+    ; utilities
+    .include  "inc/GeneralMacros.inc"
+    .include  "inc/GeneralConstants.inc"
+    ; CC26x2 hardware
+    .include  "inc/CPUreg.inc"
+    .include  "inc/GPIOreg.inc"
+    .include  "inc/IOCreg.inc"
+    .include  "inc/GPTreg.inc"
+    ; This program specific
+    .include  "inc/Keypad.inc"
+    .include  "inc/KeypadDemo.inc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -59,7 +59,7 @@ TopOfStack:     .bes    TOTAL_STACK_SIZE
         .ref DebounceKeyPatt
         .ref UpdateKeyPatt
         .ref MoveVecTable
-        
+
         .global ResetISR
 ResetISR:
 
@@ -76,9 +76,9 @@ Main:
 
         BL      InstallGPT0Handler      ;install the event handler
         BL      InitGPT0                ;initialize the internal timer
-                                        ;initialize the variables
-        BL      InitEventQueue
-        BL      InitKeypad
+                                        
+        BL      InitEventQueue          ;initialize the event queue (buffer)
+        BL      InitKeypad              ;initalize the keypad (variables, IO)
 
         MOV32   R1, SCS_BASE_ADDR       ;and finally allow interrupts.
         STREG   (1 << GPT0A_IRQ_NUM), R1, NVIC_ISER0
@@ -170,12 +170,10 @@ DoneKeypressHandler:
 
 InstallGPT0Handler:
 
-
         MOVA    R0, KeypressHandler     ;get keypress handler address
         MOV32   R1, SCS_BASE_ADDR       ;get address of SCS registers
         LDR     R1, [R1, #VTOR_OFF]     ;get table relocation address
         STR     R0, [R1, #(4 * GPT0A_EX_NUM)]   ;store vector address
-
 
         BX      LR                      ;all done, return
 
