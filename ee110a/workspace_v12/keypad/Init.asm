@@ -10,7 +10,7 @@
 ;
 ; Public functions:
 ;   InitPower - turn on power to the peripherals
-;   InitClock - turn on clocks to the peripherals
+;   InitClock - turn on clocks to the GPIO and Timer0 peripherals.
 ;   InitGPIO  - configure and enable I/Os for selected pins 
 ;   InitGPT0  - setup timer 0 based on input configuration
 ;
@@ -104,7 +104,7 @@ DonePeriphPower:                                ;done turning on peripherals
 
 ; InitClocks
 ;
-; Description:       Turn on the clock to the peripherals. 
+; Description:       Turn on the clock to the GPIO and Timer0 perhipherals. 
 ;
 ; Operation:         Setup PRCM registers to turn on clock to the peripherals.
 ;
@@ -186,52 +186,6 @@ DoneClockSetup:                                 ;done setting up clock
 ;                    11/17/25   Steven Lei       retrieved from Glen's website
 ;                    11/17/25   Steven Lei       update procedure to reflect
 ;                                                steps in manual guide
-
-; KeypadTimerTable:
-;     ; Interrupt / configure
-;     .word GPT0_BASE_ADDR    ;Timer to use
-;     .word GPT_CFG_32x1      ;CFG
-;     ;.word GPT_CTL          ;CTL - skipped, since this must always be toggled 
-;     .word GPT_IRQ_TATO      ;IMR
-;     .word                   ;RIS
-;     .word                   ;MIS
-;     .word                   ;ICLR
-;     .word                   ;SYNC
-;     .word                   ;DMAEV
-;     ; Timer control
-;     .word               ;TxPS
-;     .word               ;TxPMR
-;     .word   GPT_TxPR_PRSCL_1                        ;TxPR
-;     .word               ;TxMATCHR
-;     .word               ;
-;     .word   KEYPAD_INT_MS * CLK_PER_MS              ;TxILR
-;     .word   GPT_TxMR_PERIODIC | GPT_TxCDIR_DOWN     ;TxMR
-; EndKeypadTimerTable:
-
-
-; ServoTimerTable:
-; ; sec 15.4.4
-;     ; Interrupt / configure
-;     .word GPT1_BASE_ADDR
-;     .word GPT_PWM_LOAD      ;CFG
-;     ;.word GPT_CTL          ;CTL - skipped, since this must always be toggled 
-;     .word GPT_IRQ_TATO      ;IMR
-;     .word                   ;RIS
-;     .word                   ;MIS
-;     .word                   ;ICLR
-;     .word                   ;SYNC
-;     .word                   ;DMAEV
-;     ; Timer control
-;     .word   Timer           ;timer to select
-;     .word               ;TxPS
-;     .word               ;TxPMR
-;     .word   GPT_TxPR_PRSCL_1                        ;TxPR
-;     .word               ;TxMATCHR
-;     .word               ;
-;     .word   KEYPAD_INT_MS * CLK_PER_MS              ;TxILR
-;     .word   GPT_TxMR_PERIODIC | GPT_TxCDIR_DOWN     ;TxMR
-; EndServoTimerTable:
-
 InitGPT0:
 
 GPT0AConfig:            ;configure timer 0A as a down counter generating
@@ -242,7 +196,8 @@ GPT0AConfig:            ;configure timer 0A as a down counter generating
         STREG   GPT_CFG_32x1, R1, GPT_CFG_OFF   ;setup one 32-bit timer
 
         STREG   GPT_IRQ_TATO, R1, GPT_IMR_OFF   ;enable timeout interrupt
-        STREG   GPT_TxMR_PERIODIC | GPT_TxCDIR_DOWN, R1, GPT_TAMR_OFF ;set timer mode to periodic
+                                                ;set timer to periodic countdown
+        STREG   GPT_TxMR_PERIODIC | GPT_TxCDIR_DOWN, R1, GPT_TAMR_OFF 
                                                 ;set timer for 1 ms interrupt
         STREG   (KEYPAD_INT_MS * CLK_PER_MS), R1, GPT_TAILR_OFF
         STREG   GPT_TxPR_PRSCL_1, R1, GPT_TAPR_OFF ;set prescale to 1

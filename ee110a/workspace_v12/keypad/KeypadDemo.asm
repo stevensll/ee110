@@ -114,7 +114,7 @@ DoneMain:
 ; Data Structures:   None.
 ;
 ; Registers Changed: R0, R1
-; Stack Depth:       0 words
+; Stack Depth:       4 words max
 ;
 ;
 ; Revision History:  11/27/25   Steven Lei       initial revision
@@ -136,7 +136,6 @@ ResetInt:                               ;reset interrupt bit for GPT0A
 DoneKeypressHandler:
         POP     {LR}                    ;restore LR
         BX      LR                      ;done so return
-
 
 
 ; InstallGPT0Handler
@@ -176,6 +175,4 @@ InstallGPT0Handler:
         STR     R0, [R1, #(4 * GPT0A_EX_NUM)]   ;store vector address
 
         BX      LR                      ;all done, return
-
-
         .end

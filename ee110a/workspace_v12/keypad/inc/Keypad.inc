@@ -15,36 +15,35 @@
 ; The key presses are also debounced with an auto repeat rate. Keypress
 ; debouncing should be called by a timer interrupt.
 
-; References: Keypad pinout picture
-;               
-;             Keypad schematic with CC26xR launchpad 
-;               
+; References:
+;   keypad_schematic.pdf, keypad_pinout.jpg, SN74LS139AN data sheet
+;
 
 ; Keypad hardware
 KEYPAD_NUM_ROWS     .equ        4 
 KEYPAD_NUM_COLS     .equ        3           
 
-; Keypad columns, 1 indexed     
-KEYPAD_COL_1        .equ        20      ;Connected to GPIO 20
-KEYPAD_COL_2        .equ        19      ;"               " 19
-KEYPAD_COL_3        .equ        18      ;"               " 18  
+; Keypad columns
+KEYPAD_COL_PIN_1    .equ        20      ;Connected to GPIO 20
+KEYPAD_COL_PIN_2    .equ        19      ;"    ditto      " 19
+KEYPAD_COL_PIN_3    .equ        18      ;"    ditto      " 18  
 
 ; Keypad rows - connected to demux
-DEMUX_PIN_A         .equ        4
-DEMUX_PIN_B         .equ        21
-
-; Debounce parameters
-DEBOUNCE_TIME_MS    .equ        50      ;50 ms debouncing
-REPEAT_RATE_MS      .equ        500     ;500 ms repeat rate
+KEYPAD_DEMUX_PIN_A  .equ        4
+KEYPAD_DEMUX_PIN_B  .equ        21
 
 ; Keypad deboncing should be called by 1ms interrupt
 KEYPAD_INT_MS       .equ        1       ;1ms/1KHz interrupts
+
+; Debounce parameters - note this assumes 1 ms interrupt
+DEBOUNCE_TIME_MS    .equ        50      ;50 ms debouncing
+REPEAT_RATE_MS      .equ        500     ;500 ms repeat rate
 
 ; Software constants
 NO_KEYPATT          .equ        0       ;key pattern for no key pressed
 BAD_KEY_VALUE       .equ        -1      ;unrecognized/unsupported key press 
 
-; Keypad key mappings
+; Keypad key mappings. One hot scheme for the key pattern 
 KEYPAD_1_KEY_PATT           .equ        0x01
 KEYPAD_2_KEY_PATT           .equ        0x02
 KEYPAD_3_KEY_PATT           .equ        0x04
@@ -58,6 +57,7 @@ KEYPAD_STAR_KEY_PATT        .equ        0x200
 KEYPAD_0_KEY_PATT           .equ        0x400
 KEYPAD_POUND_KEY_PATT       .equ        0x800
 
+; Keypad values - just map to integer equivalent
 KEYPAD_1_KEY_VALUE          .equ        1
 KEYPAD_2_KEY_VALUE          .equ        2
 KEYPAD_3_KEY_VALUE          .equ        3
@@ -68,8 +68,8 @@ KEYPAD_7_KEY_VALUE          .equ        7
 KEYPAD_8_KEY_VALUE          .equ        8
 KEYPAD_9_KEY_VALUE          .equ        9
 KEYPAD_0_KEY_VALUE          .equ        0
-KEYPAD_STAR_KEY_VALUE       .equ        42
-KEYPAD_POUND_KEY_VALUE      .equ        35
+KEYPAD_STAR_KEY_VALUE       .equ        42    ;non integer, this is ASCII value
+KEYPAD_POUND_KEY_VALUE      .equ        35    ;"        ditto                  "   
 
 KEYPAD_1_2_KEY_PATT         .equ        KEYPAD_1_KEY_PATT  | KEYPAD_2_KEY_PATT
 KEYPAD_1_2_KEY_VALUE        .equ        12
