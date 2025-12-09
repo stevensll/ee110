@@ -25,8 +25,11 @@
 ;
 ; Public functions:
 ;   InitKeypad - setup the keypad variables and init the GPIO pins used
-;   DebounceKeyPatt  - debounce the key pattern by comparing new and old keypress
+;   DebounceKeyPatt  - debounce the key pattern by comparing new and old key 
+;                      key patt. Returns TRUE and the key value from the patt
+;                      if debounced, FALSE otherwise
 ;   UpdateKeyPatt  - get the new key pattern press by scanning through keypad 
+;                    and upate the prev/curr key pattern variables
 ; 
 ; Private functions:
 ;   ReadKeypadCol - reads the specified keypad col pin and places it at nth bit
@@ -142,12 +145,15 @@ EndKeyPattTable:
 ;                    table and if a match is found, the value is loaded. If
 ;                    no match, the return is BAD_KEY_VALUE
 ;
-; Arguments:         currKeyPatt: the key pattern to convert
+; Arguments:         currKeyPatt: the key pattern to get a key value from
 ; Return Value:      R0: the key value 
 ;
-; Local Variables:   None.
-; Shared Variables:  KeyPattTable (R): the table is read to find a key value
-;                    currKeyPatt (R): the key patt is read for table lookup
+; Local Variables:   R0 - the key value to return
+;                    R1 - the curr key patt from memory
+;                    R2 - the current table entry address
+;                    R3 - the key patt from the table
+; Shared Variables:  KeyPattTable - read the table to get key value and patts
+;                    currKeyPatt -  curr patt is compared to patts in the table
 ; Global Variables:  None.
 ;
 ; Input:             None.
@@ -158,7 +164,7 @@ EndKeyPattTable:
 ; Algorithms:        None.
 ; Data Structures:   None.
 ;
-; Registers Changed: R0, R1, R2, R4, R5
+; Registers Changed: flags, R0 - R3
 ; Stack Depth:       0 words
 ;
 ;
@@ -167,29 +173,28 @@ EndKeyPattTable:
 GetKeyValueFromPatt:
 
 SetupGetKeyValueFromPatt:               ;load the key patt and table variables
-        MOVA    R1, currKeyPatt             ;get the curr key patt
-        LDR     R0, [R1]                    
-        ADR     R4, KeyPattTable            ;get the start of the table
+        MOVA    R2, currKeyPatt             ;get the curr key patt
+        LDR     R1, [R2]                    
+        ADR     R2, KeyPattTable            ;get the start of the table
 
 GetKeyValueLoop:                        ;loop through the key patt table
-        LDRH    R1, [R4], #BYTES_PER_HALF_WORD  ;get the table key pattern 
-        LDRH    R2, [R4], #BYTES_PER_HALF_WORD  ;get the table key value
-        CMP     R0, R1                      ;compare the patterns
+        LDRH    R3, [R2], #BYTES_PER_HALF_WORD  ;get the table key pattern 
+        LDRH    R0, [R2], #BYTES_PER_HALF_WORD  ;get the table key value
+        CMP     R3, R1                      ;compare the patterns
         BEQ     DoneGetKeyValue             ;   match, so return value
         ;BNE    CheckEndKeyPattTable        ;no match, so check if at table end
 
 CheckEndKeyPattTable:                   ;check if loop has hit the end of table
-        ADR     R5, EndKeyPattTable         ;get table end address
-        CMP     R4, R5                      ;compare to current address
+        ADR     R3, EndKeyPattTable         ;get table end address
+        CMP     R2, R3                      ;compare to current address
         BNE     GetKeyValueLoop             ;   not end of table, so still loop
         ;BEQ    NoKeyValueFound             ;end of table, so patt not in table
     
 NoKeyValueFound:                        ;key pattern is not in table
-        MOV     R2, #BAD_KEY_VALUE          ;so value is BAD_KEY_VALUE
+        MOV     R0, #BAD_KEY_VALUE          ;so value is BAD_KEY_VALUE
         ;B       DoneGetKeyValue            ;return
-
+        
 DoneGetKeyValue:
-        MOV     R0, R2                      ;return value must be in R0
         BX      LR                          ;done so return
 
 
@@ -449,18 +454,18 @@ DoneUpdateKeyPatt:
 ;                    called by a timer interrupt, it only does one debounce
 ;                    cycle (debounceCounter only decrements once). If the key 
 ;                    is successfully debounced, sets the counter up for 
-;                    auto repeat and also calls the callback function to register
-;                    the key press.
+;                    auto repeat and returns the key value with a TRUE status.
+;                    If the key is not debounced yet, returns a FALSE status.
 ;                    
 ; Operation:         The prev and curr key patterns are checked to see if the
 ;                    counter should be reset or decremented. Then calls 
 ;                    UpdateKeyPatt to get the new key pattern. 
 ;                    If the counter hits 0, then the counter is loaded with the 
-;                    repeat rate and the callback function is executed.
+;                    repeat rate and GetKeyValueFromPatt is called.
 ;                    
-;                    
-; Arguments:         R0: callback - the function to execute after debouncing
-; Return Value:      None.
+; Arguments:         None.
+; Return Value:      R0 - TRUE if done debouncing, FALSE if not done debouncing.
+;                    R1 - the key value, only relevant if debounced is TRUE.
 ;
 ; Local Variables:   None.
 ; Shared Variables:  None.
@@ -474,7 +479,7 @@ DoneUpdateKeyPatt:
 ; Algorithms:        None.
 ; Data Structures:   None.
 ;
-; Registers Changed: R0, R1
+; Registers Changed: R0 - R3
 ; Stack Depth:       1 word max
 ;
 ;
@@ -487,8 +492,8 @@ CheckKeyPattChanged:                    ;Check if key presses have changed
         MOVA    R2, prevKeyPatt             ;get the previous patt from memory
         LDR     R1, [R2]                
         MOVA    R2, currKeyPatt             ;get the curr key patt from memory
-        LDR     R0, [R2]
-        CMP     R1, R0                      ;check if prev = curr patt
+        LDR     R3, [R2]
+        CMP     R1, R3                      ;check if prev = curr patt
         BNE     ResetDebounceCounter        ;patts different, so reset counter
         ;BEQ    StartDebounceKeyPatt        ;patts same, so debounce
 
@@ -499,20 +504,24 @@ StartDebounceKeyPatt:
         SUBS    R1, R1, #1                  ;decrement counter, check if 0
         BEQ     ProcessDebouncedKeyPatt		;	counter is 0, so key debounced
         STR     R1, [R2]                    ;counter not 0, save new count value
+        MOV     R0, #FALSE                  ;return false - key not debounced 
         BNE     DoneDebounceKeyPatt         ;done with 1 debounce cycle
 
 ProcessDebouncedKeyPatt:                ;counter is 0, so process the key patt
         MOVA    R2, debounceCounter         ;get counter from memory
         MOV32   R1, (REPEAT_RATE_MS)        ;setup counter for auto repeat
         STR     R1, [R2]                    ;write new counter value to memory
-        BL      GetKeyValueFromPatt         ;get the key value pressed
-        BLX     R10                         ;call the callback
-		B	DoneDebounceKeyPatt				;done
+        BL      GetKeyValueFromPatt         ;get the key value - now in R0
+        MOV     R1, R0                      ;key value if debounced is at R1
+        MOV     R0, #TRUE                    ;return true - key is debounced
+		B	    DoneDebounceKeyPatt		    ;done
 
-ResetDebounceCounter: 					;reset debounce counter
-        MOVA    R1, debounceCounter         ;get the counter from memory
-        MOV32   R0, (DEBOUNCE_TIME_MS)    	;reset to debounce time
-        STR     R0, [R1]                    ;write to memory
+ResetDebounceCounter: 					;reset debounce counter - not debounced
+        MOVA    R2, debounceCounter         ;get the counter from memory
+        MOV32   R1, (DEBOUNCE_TIME_MS)    	;reset to debounce time
+        STR     R1, [R2]                    ;write to memory
+        MOV     R0, #FALSE                  ;return false - key not debounced 
+        ;B      DoneDbeounceKeyPatt         ;done
 
 DoneDebounceKeyPatt:
         POP     {LR}						;restore return address

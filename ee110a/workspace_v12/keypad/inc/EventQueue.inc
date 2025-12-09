@@ -23,5 +23,5 @@ QUEUE_INDEX_START     .equ        0           ;queue is 0 indexed
 QUEUE_SIZE            .equ        12          ;number of elements in queue
 
 ; Event IDs
-KEYPRESS_EVENT        .equ        0x01        ;ID for when key(s) are pressed
+KEYPRESS_EVENT        .equ        (0x00 << 16)   ;ID for when key(s) are pressed
 ; Add more event IDS here ....

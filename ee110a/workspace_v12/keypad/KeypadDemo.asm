@@ -20,7 +20,7 @@
 ;    11/30/25  Steven Lei       initial revision
 
 ; Local include
-    ; utilities
+    ; General utilities
     .include  "inc/GeneralMacros.inc"
     .include  "inc/GeneralConstants.inc"
     ; CC26x2 hardware
@@ -28,10 +28,9 @@
     .include  "inc/GPIOreg.inc"
     .include  "inc/IOCreg.inc"
     .include  "inc/GPTreg.inc"
-    ; This program specific
+    ; Keypad and event queue
     .include  "inc/Keypad.inc"
-    .include  "inc/KeypadDemo.inc"
-
+    .include  "inc/EventQueue.inc"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
         .data
@@ -113,7 +112,7 @@ DoneMain:
 ; Algorithms:        None.
 ; Data Structures:   None.
 ;
-; Registers Changed: R0, R1
+; Registers Changed: R0 - R3
 ; Stack Depth:       4 words max
 ;
 ;
@@ -124,8 +123,16 @@ KeypressHandler:
         BL      UpdateKeyPatt           ;update the key pattern (returned in R0)
         CMP     R0, #NO_KEYPATT         ;check if there is some key press
         BEQ     DoneKeypressHandler     ;   dont have any key press, so done
-        MOVA    R10, EnqueueEvent       ;setup debounce callback
+
+DebounceKeypresses:                 ; have                          
         BL      DebounceKeyPatt         ;have some key press, so debounce
+        CMP     R0, #TRUE               ;check if done debouncing
+        BNE     ResetInt                ;   not done debouncing, so do nothing
+
+AddKeyEvent:                        ;done debouncing, so create keypresse event
+        MOV     R0, R1                  ; key value was returned in R1
+        ORR     R0, R0, #KEYPRESS_EVENT ; add the event ID to make the key event
+        BL      EnqueueEvent            ; add the event to queue, arg is R0
 
 ResetInt:                               ;reset interrupt bit for GPT0A
         MOV32   R1, GPT0_BASE_ADDR      ;get base address
