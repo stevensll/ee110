@@ -127,7 +127,7 @@ InitEventQueue:
 ; Algorithms:        None.
 ; Data Structures:   None.
 ;
-; Registers Changed: R0, R1, R2, R3, R4
+; Registers Changed: flags, R0 - R3
 ; Stack Depth:       0 words
 ;
 ;
@@ -136,21 +136,22 @@ InitEventQueue:
 EnqueueEvent:
 
 AddEventToQueue:                        ;write the event (R0) to the queue 
-        MOVA    R3, queueIndex              ;get the queue index from memory 
-        LDR     R2, [R3]                    
+        MOVA    R2, queueIndex              ;get the queue index from memory 
+        LDR     R1, [R2]                    
 
-        MOV     R4, #BYTES_PER_WORD         ;scale queue index to create offset
-        MUL     R4, R2, R4                  ;R4 is now byte offset to the queue 
+        MOV     R2, #BYTES_PER_WORD         ;scale queue index to create offset
+        MUL     R2, R1, R2                  ;R2 is now byte offset to the queue 
 
-        MOVA    R1, eventQueue              ;get base addr for event queue 
-        STR     R0, [R1, R4]                ;and store event at base + offset
+        MOVA    R3, eventQueue              ;get base addr for event queue 
+        STR     R0, [R3, R2]                ;and store event at base + offset
 
 UpdateQueueIndexValue:                  ;update the queue index with wraparound
-        ADD     R2, R2, #1                  ;increment queue index
-        CMP     R2, #QUEUE_SIZE             ;check if index is past end of queue
+        ADD     R1, R1, #1                  ;increment queue index
+        CMP     R1, #QUEUE_SIZE             ;check if index is past end of queue
         BNE     DoneEnqueueEvent            ;   within bounds, so done
-        MOV     R2, #QUEUE_INDEX_START      ;past end, so reset to start
-
-DoneEnqueueEvent:                       
-        STR     R2, [R3]                    ;write new queue index to memory
+        MOV     R1, #QUEUE_INDEX_START      ;past end, so reset to start
+        
+DoneEnqueueEvent:   
+        MOVA    R2, queueIndex              ;write queue index back to memory
+        STR     R1, [R2]                
         BX      LR                          ;done so return

@@ -82,8 +82,8 @@ Main:
         MOV32   R1, SCS_BASE_ADDR       ;and finally allow interrupts.
         STREG   (1 << GPT0A_IRQ_NUM), R1, NVIC_ISER0
 
-Forever:
-        MOV32     R9, NO_KEYPATT
+Forever:                                ; no code in main, interrupt driven
+        NOP
 
 DoneMain:
         B      Forever

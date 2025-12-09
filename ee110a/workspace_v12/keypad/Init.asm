@@ -45,7 +45,6 @@
         .align  512
 VecTable:       .space  VEC_TABLE_SIZE * BYTES_PER_WORD
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
     .text
@@ -242,7 +241,7 @@ GPT0AConfig:            ;configure timer 0A as a down counter generating
 ; Data Structures:   None.
 ;
 ; Registers Changed: flags, R0 - R6
-; Stack Depth:       0 words
+; Stack Depth:       3 words max
 ;
 ; References:        CC26xR manual, sec 13.6 - "GPIO"
 ; 
@@ -251,6 +250,7 @@ GPT0AConfig:            ;configure timer 0A as a down counter generating
 ;                    12/8/25    Steven Lei       convert to table driven code
 
 InitGPIO:
+        PUSH    {R4, R5, R6}              ;Save modified registers
         MOV32   R2, IOC_BASE_ADDR         ;get the IOC base address
         MOV     R3, #0                    ;clear to accumulate output enable bits
     
@@ -273,6 +273,7 @@ CheckEndGPIOTable:                    ;check if loop has hit end of table
 DoneInitGPIO:
         MOV32   R2, GPIO_BASE_ADDR          ;get base addr for GPIO pins
         STR     R3, [R2, #GPIO_DOE31_0_OFF] ;enable outputs to all output pins
+        POP     {R4, R5, R6}                ;save touched registers
         BX      LR                          ;done so return 
 
 
@@ -338,7 +339,6 @@ MoveVecCopyDone:                        ;done copying data, change VTOR
         MOVA    R2, VecTable            ;load address of new vector table
         STR     R2, [R1, #VTOR_OFF]     ;and store it in VTOR
         ;B      MoveVecTableDone        ;and all done
-
 
 MoveVecTableDone:                       ;done moving the vector table
         POP     {R4}                    ;restore registers and return
