@@ -12,36 +12,42 @@ ASM_SRCS += \
 ../EventQueue.asm \
 ../Init.asm \
 ../Keypad.asm \
-../KeypadDemo.asm 
+../Servo.asm \
+../ServoDemo.asm 
 
 OBJS += \
 ./EventQueue.obj \
 ./Init.obj \
 ./Keypad.obj \
-./KeypadDemo.obj 
+./Servo.obj \
+./ServoDemo.obj 
 
 ASM_DEPS += \
 ./EventQueue.d \
 ./Init.d \
 ./Keypad.d \
-./KeypadDemo.d 
+./Servo.d \
+./ServoDemo.d 
 
 OBJS__QUOTED += \
 "EventQueue.obj" \
 "Init.obj" \
 "Keypad.obj" \
-"KeypadDemo.obj" 
+"Servo.obj" \
+"ServoDemo.obj" 
 
 ASM_DEPS__QUOTED += \
 "EventQueue.d" \
 "Init.d" \
 "Keypad.d" \
-"KeypadDemo.d" 
+"Servo.d" \
+"ServoDemo.d" 
 
 ASM_SRCS__QUOTED += \
 "../EventQueue.asm" \
 "../Init.asm" \
 "../Keypad.asm" \
-"../KeypadDemo.asm" 
+"../Servo.asm" \
+"../ServoDemo.asm" 
 
 

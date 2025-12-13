@@ -211,7 +211,6 @@ InitGPIO:
         MOV32   R0, IOCFG_GEN_DOUT_4MA  ;setup for general 4mA outputs
         STR     R0, [R1, #IOCFG4]       ;write config for keypad demux pin a
         STR     R0, [R1, #IOCFG21]      ;                              pin b  
-		STR		R0, [R1, #IOCFG5]		;				   interrupt test pin
 
         MOV32   R1, GPIO_BASE_ADDR      ;get base addr for GPIO pins
                                         ;and write enable for output pins

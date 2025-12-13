@@ -19,7 +19,8 @@
 ;    11/15/25  Steven Lei       add references to manual
 ;    11/17/25  Steven Lei       add constant definitions for TxMR, TxPR
 ;    11/27/25  Steven Lei       add definitions for timer count direction
-;    11/27/25  Stevne Lei       add interrupt and exception numbers
+;    11/27/25  Steven Lei       add interrupt and exception numbers
+;    12/12/25  Steven Lei       add GPT_IRQ_NONE (no interrrupt)
 
 ; base addresses
 ;   table 3.1, pg 310
@@ -134,7 +135,7 @@ GPT_IRQ_TAM        .equ    0x00000010   ;timer A match interrupt
 GPT_IRQ_CAE        .equ    0x00000004   ;timer A capture event interrupt
 GPT_IRQ_CAM        .equ    0x00000002   ;timer A capture mode match interrupt
 GPT_IRQ_TATO       .equ    0x00000001   ;timer A timeout interrupt
-
+GPT_IRQ_NONE       .equ    0x00000000   ;disable interrupt
 
 ; DMAEV - DMA event register
 ;   sec 15.5.1.26, pg 1382

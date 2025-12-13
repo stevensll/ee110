@@ -19,8 +19,8 @@
 
 ; Revision History:
 ;    11/27/25  Steven Lei       initial revision
-;    12/8/25   Steven Lei       convert InitGPIO, InitGPT0 to table driven code
-
+;    12/8/25   Steven Lei       convert InitGPIO to table driven code
+;    12/12/25  Steven Lei	add InitGPT1 and support for Timer1 in InitClocks
 
 ; Local includes
     ; Utilities
@@ -34,6 +34,7 @@
     ; This program specific
     .include  "inc/Keypad.inc"
     .include  "inc/KeypadDemo.inc"
+	.include  "inc/Servo.inc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -56,6 +57,7 @@ VecTable:       .space  VEC_TABLE_SIZE * BYTES_PER_WORD
     .def InitClocks
     .def InitGPIO
     .def InitGPT0
+    .def InitGPT1
     .def MoveVecTable
 
 
@@ -103,7 +105,7 @@ DonePeriphPower:                                ;done turning on peripherals
 
 ; InitClocks
 ;
-; Description:       Turn on the clock to the GPIO and Timer0 perhipherals. 
+; Description:       Turn on the clock to the GPIO and Timer0/1 perhipherals.
 ;
 ; Operation:         Setup PRCM registers to turn on clock to the peripherals.
 ;
@@ -129,7 +131,7 @@ DonePeriphPower:                                ;done turning on peripherals
 ;   
 ; Revision History:  02/17/21   Glen George      initial revision
 ;                    10/30/25   Steven Lei       retrieved from Glen's website
-
+;                    12/12/25   Steven Lei       add Timer 1 clock for servo
 InitClocks:
 
 
@@ -137,6 +139,7 @@ InitClocks:
 
         STREG   GPIOCLK_EN, R1, GPIOCLKGR_OFF   ;turn on GPIO clocks
         STREG   GPT0CLK_EN, R1, GPTCLKGR_OFF    ;turn on Timer 0 clocks
+        STREG	GPT1CLK_EN, R1, GPTCLKGR_OFF	;turn on Timer 1 clocks
         STREG   GPTCLKDIV_1, R1, GPTCLKDIV_OFF  ;timers get system clock
 
         STREG   CLKLOADCTL_LD, R1, CLKLOADCTL_OFF  ;load clock settings
@@ -204,6 +207,65 @@ GPT0AConfig:            ;configure timer 0A as a down counter generating
 
 
         BX      LR                              ;done so return
+
+
+; InitGPT1
+;
+; Description:       This function initializes GPT1. It sets up the timer to
+;                    generate a PWM signal with SERV_PWM_PERIOD_MS width.
+;
+; Operation:         The appropriate values are written to the timer control
+;                    registers such that the Timer0A is configured to 32 bit,
+;                    periodic mode with interrupts enabled. 
+;
+; Arguments:         None.
+; Return Value:      None.
+;
+; Local Variables:   None.
+; Shared Variables:  None.
+; Global Variables:  None.
+;
+; Input:             None.
+; Output:            None.
+;
+; Error Handling:    None.
+;
+; Algorithms:        None.
+; Data Structures:   None.
+;
+; Registers Changed: R0, R1
+; Stack Depth:       0 words
+;
+; References:        CC26xR manual: PWM mode sec 15.4.4
+;
+; Revision History:  12/12/25   Steven Lei       initial revision, Servo (HW5)
+
+InitGPT1:
+
+GPT1AConfig:            ;configure timer 1A as a down counter generating
+                        ;PWM signal with SERVO_PWM_PERIOD_MS
+
+        MOV32   R1, GPT1_BASE_ADDR              ;get GPT1 base address
+        STREG   GPT_CTL_TADIS, R1, GPT_CTL_OFF  ;disable timer A before changes
+        STREG   GPT_CFG_16x2, R1, GPT_CFG_OFF   ;setup as 2 - 16 bit timers
+        ;STREG   0x02,         R1, GPT_TAMR_OFF  ;
+        ;STREG   0x01,         R1, GPT_T
+        ;STREG   R1, GPT_TCTL_OFF           ; not inverted PWM
+        STREG   GPT_IRQ_NONE, R1, GPT_IMR_OFF   ;disable timeout interrupt
+
+        STREG   0x0000180A, R1, GPT_TAMR_OFF    ;down counter starting high
+
+   	    STREG   SERVO_PWM_INTERVAL, R1, GPT_TAILR_OFF ; set the period
+        STREG   SERVO_PWM_PRESCALE, R1, GPT_TAPR_OFF  ;set prescale
+
+        ;STREG	(SERVO_PWM_MIN_DIFF & 0xFFFF) , R1, GPT_TAMATCHR_OFF
+        ;STREG	(SERVO_PWM_MIN_DIFF >> 16) , 	R1, GPT_TAPMR_OFF
+
+
+        STREG   GPT_CTL_TAEN, R1, GPT_CTL_OFF   ;enable timer A with changes
+
+        BX      LR                              ;done so return
+
 
 ; InitGPIO
 ;

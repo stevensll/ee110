@@ -1,0 +1,81 @@
+
+.data
+
+
+; if i have neg e.x. 1111001 want inverse of that + 1 (twos complement)
+    ; get inverse want 0 -> 1, 1 -> 0, so EOR with ones
+; if i have pos e.x. 0111101 i want to do nothing
+    ;  0 -> 0, 1 -> 1, so EOR with ZEROES
+; can get the + 1 from the MSB 
+Question1:                      ;get abs of a sint32
+    EOR     R1, R0, ASR R0, #31     ; R1 = ONES for neg, ZERO for pos
+                                    ; Then R1 gets inverted if R0 neg, else same
+    ADD     R1, R1, ASR R0, #31     ; add the +1 if negative, else adds +0  
+
+
+Question2:                      ;get sign (-1, 0, or 1) of sint32
+    ASR     R1, R0, #31             ;sign extend so now R1 is either -1 or 0
+    CMP     R0, #1                  ;carry now set if == 1, reset if 0
+    ADC     R0, R1, #0              ;-1 + C always -1. 0 + C = 0 or 1
+
+
+Question3:                      ;get power of 2 of uint32. there is edge case
+    SUB     R1, R0, #1              ;get R0 - 1
+    AND     R0, R1, R0              ;if power of 2, R0 && R0 - 1 should be 0
+    CMP     R0, #0                  ;ZF set if power of 2, 0 otherwise
+                                ;edge case: if R0 originally 0, ZF is also set
+                                    ;but 0 is not power of 2, I don't know how
+                                    ;to account for this in <= 3 instructions
+
+; Pseudo code/work:
+;   anggle is just offset to table, so want a y that is in (0,91)
+;   want to convert x in (0,360) to a y (0, 90)
+;   q1: y = x; q2: y = 180 - x (since sin(180-x) = sin(x) for q2/q1)
+;       we can treat this as: y = sign(offset - x)
+;       for q1: offset = 0, q2: offset = 180, take the sign to remove the negative
+;
+;   note q4 and q3 is just q1/q2 but take the output of table and negate it
+;   isq2 = c_flag(cmp(x,90))              ; carry 1 if x in q2
+;   output_sign = sign(180-x)
+;   final_angle = x
+;   q3q4 = c_flag(cmp(x, 180))            ; carry 0 if x in q3/q4 
+;   isq4 = c_flag((cmp(x,270)))           ; carry 1 if x in q4
+;   isq3 = c_flag(cmp(x,180))
+;   isq2 = c_flag(cmp(x, ))
+;   q3toq2 = x - 90
+;   q4toq1 = x - 270
+;   out = table[final_angle] * output_sign
+Question4:                     ;sine of an angle (0-359), given table only 0-90
+
+GetOutputSign:
+    ;R1 = output_sign
+    ;R0 = accumulator for y
+    MOVW    R2, #(SinTable & 0xFFFF)           ;load the low 16 bits of table
+    MOVT    R2, #((SinTable >> 16) & 0xFFFF)   ;load high 16 bits of table
+    LDR     R2, [SinTable, R0]                 ;get sin(y)
+    MUL     R0, R1, R1                         ;mul by the sign for q3/q4
+    
+
+
+
+;Note the conditions placed translate to the following pseudo code
+;SignStepCount = Sgn(SignStepCount) (Sgn from question 2)
+;StepCount = StepCount - SignStepCount
+;StepIdx = StepIdx + SignStepCount
+;StepIdx = StepIdx mod 32
+;For mod 32, note that our boundaries are 
+;   0:  0 - 1  = -1 = 0b11...111111; we want to map to  0b00...011111
+;   31: 31 + 1 = 32 = 0b00...100000; we want to map to 0b00...000000
+;   so just mask the high bits above the number 31
+Question5:                      ;update stepper variables
+
+GetStepCountSign:               ;get the sign of step count (-1, 0, 1) in R0
+    ; equivalent of doing SGN macro
+    ASR     R1, R5, #31             ;sign extend so now R1 is either -1 or 0
+    CMP     R5, #1                  ;carry now set if == 1, reset
+    ADC     R0, R1, #0              ;-1 + C always -1. 0 + C = 0 or 1
+
+UpdateValues:                   ;now update the values
+    SUB     R5, R5, R0              ;StepCount = StepCount - SignStepCount
+    ADD     R6, R6, R0              ;StepIdx = StepIdx + SignStepCount
+    AND     R6, R6, #31             ;Mask to preserve value between 0 and 31

@@ -13,7 +13,8 @@ ORDERED_OBJS += \
 "./EventQueue.obj" \
 "./Init.obj" \
 "./Keypad.obj" \
-"./KeypadDemo.obj" \
+"./Servo.obj" \
+"./ServoDemo.obj" \
 "../cc26x2r1f.cmd" \
 $(GEN_CMDS__FLAG) \
 -llibc.a \
@@ -144,8 +145,8 @@ keypad.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)
-	-$(RM) "EventQueue.obj" "Init.obj" "Keypad.obj" "KeypadDemo.obj" 
-	-$(RM) "EventQueue.d" "Init.d" "Keypad.d" "KeypadDemo.d" 
+	-$(RM) "EventQueue.obj" "Init.obj" "Keypad.obj" "Servo.obj" "ServoDemo.obj" 
+	-$(RM) "EventQueue.d" "Init.d" "Keypad.d" "Servo.d" "ServoDemo.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

@@ -1,6 +1,7 @@
 "./EventQueue.obj"
 "./Init.obj"
 "./Keypad.obj"
-"./KeypadDemo.obj"
+"./Servo.obj"
+"./ServoDemo.obj"
 "../cc26x2r1f.cmd"
 -llibc.a
